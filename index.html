@@ -4,13 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bridge Submittal & RFI Tracker</title>
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
@@ -19,46 +16,40 @@
 </head>
 <body class="bg-slate-50 antialiased text-slate-800">
   <div id="root"></div>
-
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect, useRef, useMemo } = React;
 
-    // ============================================================================
-    // INLINE SVG ICONS
-    // ============================================================================
+    // ── Icons ────────────────────────────────────────────────────────────────────
     const Icon = ({ children, className }) => (
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
     );
-    const FileText = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></Icon>;
+    const FileText     = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></Icon>;
     const FileQuestion = ({className}) => <Icon className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 10.3c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.4.5.8.5 1.3 0 1.3-2 2-2 2"/><circle cx="12" cy="17" r="1"/></Icon>;
-    const Layers = ({className}) => <Icon className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>;
-    const Plus = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
-    const Search = ({className}) => <Icon className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>;
-    const Filter = ({className}) => <Icon className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></Icon>;
-    const ArrowLeft = ({className}) => <Icon className={className}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></Icon>;
-    const Download = ({className}) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
-    const UploadCloud = ({className}) => <Icon className={className}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></Icon>;
-    const CheckCircle = ({className}) => <Icon className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
-    const Clock = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>;
-    const AlertCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
-    const FilePlus = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></Icon>;
-    const UsersIcon = ({className}) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
-    const Edit2 = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
-    const MessageSquare = ({className}) => <Icon className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
-    const Send = ({className}) => <Icon className={className}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></Icon>;
-    const CornerDownRight = ({className}) => <Icon className={className}><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></Icon>;
-    const Tag = ({className}) => <Icon className={className}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></Icon>;
-    const BarChart2 = ({className}) => <Icon className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></Icon>;
-    const X = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
-    const LinkIcon = ({className}) => <Icon className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Icon>;
-    const LogOut = ({className}) => <Icon className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>;
-    const Briefcase = ({className}) => <Icon className={className}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></Icon>;
-    const Trash2 = ({className}) => <Icon className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
-    const UserPlus = ({className}) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></Icon>;
+    const Layers       = ({className}) => <Icon className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>;
+    const Plus         = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+    const Search       = ({className}) => <Icon className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>;
+    const ArrowLeft    = ({className}) => <Icon className={className}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></Icon>;
+    const Download     = ({className}) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
+    const UploadCloud  = ({className}) => <Icon className={className}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></Icon>;
+    const CheckCircle  = ({className}) => <Icon className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+    const Clock        = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>;
+    const AlertCircle  = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+    const FilePlus     = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></Icon>;
+    const UsersIcon    = ({className}) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
+    const Edit2        = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
+    const MessageSquare= ({className}) => <Icon className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+    const Send         = ({className}) => <Icon className={className}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></Icon>;
+    const CornerDownRight=({className})=> <Icon className={className}><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></Icon>;
+    const Tag          = ({className}) => <Icon className={className}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></Icon>;
+    const BarChart2    = ({className}) => <Icon className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></Icon>;
+    const X            = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+    const LinkIcon     = ({className}) => <Icon className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Icon>;
+    const LogOut       = ({className}) => <Icon className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>;
+    const Briefcase    = ({className}) => <Icon className={className}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></Icon>;
+    const Trash2       = ({className}) => <Icon className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
+    const UserPlus     = ({className}) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></Icon>;
 
-    // ============================================================================
-    // FIREBASE INITIALIZATION 
-    // ============================================================================
+    // ── Firebase ─────────────────────────────────────────────────────────────────
     const firebaseConfig = {
       apiKey: "AIzaSyCrWXPOH_Uu3MKp5OInkqbypVB-NOU1Moc",
       authDomain: "submittal-log.firebaseapp.com",
@@ -68,983 +59,552 @@
       appId: "1:776483227689:web:380b3c45ec975fd7223438",
       measurementId: "G-GVC1TMK90M"
     };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth    = firebase.auth();
+    const db      = firebase.firestore();
     const storage = firebase.storage();
-    if (typeof window !== 'undefined' && firebase.analytics) {
-      firebase.analytics();
-    }
+    // Shorthand for atomic array append — avoids stale-closure overwrites
+    const arrayUnion = firebase.firestore.FieldValue.arrayUnion;
 
-    // ============================================================================
-    // CONSTANTS
-    // ============================================================================
-    const INTERNAL_STATUSES = ['Unassigned', 'Assigned', 'In Review', 'Ready for PM Approval', 'Sent Out'];
+    const INTERNAL_STATUSES = ['Unassigned','Assigned','In Review','Ready for PM Approval','Sent Out'];
     const STATUSES = {
-      submittals: ['Pending', 'Approved', 'Approved as Noted', 'Revise & Resubmit', 'Rejected', 'Information Only'],
-      rfis: ['Pending', 'Answered', 'Clarification Requested', 'Closed']
+      submittals: ['Pending','Approved','Approved as Noted','Revise & Resubmit','Rejected','Information Only'],
+      rfis:       ['Pending','Answered','Clarification Requested','Closed']
     };
 
-    // ============================================================================
-    // MAIN APPLICATION COMPONENT
-    // ============================================================================
+    // ── App ──────────────────────────────────────────────────────────────────────
     function App() {
-      // Auth State
-      const [user, setUser] = useState(null);
+      // Auth
+      const [user, setUser]             = useState(null);
       const [authLoading, setAuthLoading] = useState(true);
-      const [authMode, setAuthMode] = useState('login'); 
-      const [authEmail, setAuthEmail] = useState('');
+      const [authMode, setAuthMode]     = useState('login');
+      const [authEmail, setAuthEmail]   = useState('');
       const [authPassword, setAuthPassword] = useState('');
 
-      // Core Routing & Context State
-      const [activeModule, setActiveModule] = useState('submittals'); 
-      const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'intake', 'detail', 'analytics', 'projects', 'team'
+      // Routing
+      const [activeModule, setActiveModule]     = useState('submittals');
+      const [currentView, setCurrentView]       = useState('dashboard');
       const [activeRecordItem, setActiveRecordItem] = useState(null);
-      
-      // Data State
+
+      // Data
       const [activeRecords, setActiveRecords] = useState([]);
-      const [projects, setProjects] = useState([]);
-      const [teamMembers, setTeamMembers] = useState([]); // Explicit user-managed registry
-      
-      const [loadingData, setLoadingData] = useState(true);
-      const [isUploading, setIsUploading] = useState(false);
+      const [projects, setProjects]           = useState([]);
+      const [teamMembers, setTeamMembers]     = useState([]);
+      const [loadingData, setLoadingData]     = useState(true);
+
+      // Upload
+      const [isUploading, setIsUploading]     = useState(false);
       const [uploadProgress, setUploadProgress] = useState(0);
 
-      const [searchQuery, setSearchQuery] = useState('');
-      const [dashboardTab, setDashboardTab] = useState('my-queue'); 
+      // Dashboard
+      const [searchQuery, setSearchQuery]   = useState('');
+      const [dashboardTab, setDashboardTab] = useState('my-queue');
 
-      // Edit & Comment States
-      const [isEditing, setIsEditing] = useState(false);
+      // Detail editing
+      const [isEditing, setIsEditing]     = useState(false);
       const [editFormData, setEditFormData] = useState({});
-      const [newComment, setNewComment] = useState('');
-      const [quickCommentModal, setQuickCommentModal] = useState(null); 
-      const [quickCommentText, setQuickCommentText] = useState('');
 
-      // Project Management State
-      const [projForm, setProjForm] = useState({ id: '', name: '', client: '' });
+      // FIX #2 — controlled routing inputs (replaces defaultValue)
+      const [assignedToInput, setAssignedToInput] = useState('');
+      const [qcReviewerInput, setQcReviewerInput] = useState('');
+
+      // Comments
+      const [newComment, setNewComment]           = useState('');
+      const [quickCommentModal, setQuickCommentModal] = useState(null);
+      const [quickCommentText, setQuickCommentText]   = useState('');
+
+      // Project form
+      const [projForm, setProjForm]       = useState({ id:'', name:'', client:'' });
       const [isEditingProj, setIsEditingProj] = useState(false);
 
-      // Team Management State
-      const [teamForm, setTeamForm] = useState({ id: '', name: '', email: '', role: 'Structural Engineer' });
+      // Team form
+      const [teamForm, setTeamForm]       = useState({ id:'', name:'', email:'', role:'Structural Engineer' });
       const [isEditingTeam, setIsEditingTeam] = useState(false);
 
-      // Intake Form State
-      const [intakeProject, setIntakeProject] = useState('');
-      const [intakeType, setIntakeType] = useState('new'); 
-      const [intakeBaseId, setIntakeBaseId] = useState('');
-      const [intakeTitle, setIntakeTitle] = useState('');
-      const [intakeSubtitle, setIntakeSubtitle] = useState('');
+      // Intake form
+      const [intakeProject, setIntakeProject]       = useState('');
+      const [intakeType, setIntakeType]             = useState('new');
+      const [intakeBaseId, setIntakeBaseId]         = useState('');
+      const [intakeTitle, setIntakeTitle]           = useState('');
+      const [intakeSubtitle, setIntakeSubtitle]     = useState('');
       const [intakeContractor, setIntakeContractor] = useState('');
-      const [intakeRevision, setIntakeRevision] = useState(0);
-      const [intakeSlaDays, setIntakeSlaDays] = useState(14);
+      const [intakeRevision, setIntakeRevision]     = useState(0);
+      const [intakeSlaDays, setIntakeSlaDays]       = useState(14);
       const [intakeComponents, setIntakeComponents] = useState('');
       const [intakeDisciplines, setIntakeDisciplines] = useState('');
-      const [intakeRelatedDocs, setIntakeRelatedDocs] = useState(''); 
-      const [intakeFile, setIntakeFile] = useState(null);
+      const [intakeRelatedDocs, setIntakeRelatedDocs] = useState('');
+      const [intakeFile, setIntakeFile]             = useState(null);
 
-      // Redline Upload State
       const [outgoingFile, setOutgoingFile] = useState(null);
-      const [toast, setToast] = useState(null);
+      const [toast, setToast]               = useState(null);
 
-      // --------------------------------------------------------------------------
-      // DYNAMIC IDENTITY BINDING
-      // --------------------------------------------------------------------------
-      const activeUserRole = user ? { id: user.uid, name: user.email } : { id: 'guest', name: 'Guest' };
-      
-      // Robust fallback array for the datalist to guarantee options load correctly
-      const allUserOptions = React.useMemo(() => {
-        const options = new Set();
-        options.add('Unassigned');
-        
-        // Always include the active authenticated user
-        if (user && user.email) options.add(user.email);
-        
-        // Add dynamically fetched users from the Firestore registry
-        teamMembers.forEach(member => options.add(member.name));
-        
-        return Array.from(options);
+      // FIX #3 — ref tracks active record ID so Firestore listener doesn't need
+      // it as a dependency (prevents re-subscribe on every open/close)
+      const activeRecordIdRef = useRef(null);
+      useEffect(() => { activeRecordIdRef.current = activeRecordItem?.id ?? null; }, [activeRecordItem]);
+
+      // FIX #1 — resolve the logged-in user's display name from the Team registry.
+      // Falls back to email if they haven't been added as a team member.
+      // This ensures assignedTo values stored in Firestore always match
+      // the names shown in the datalist, and that My Queue filtering works.
+      const activeUserRole = useMemo(() => {
+        if (!user) return { id: 'guest', name: 'Guest' };
+        const match = teamMembers.find(m => m.email === user.email);
+        return { id: user.uid, name: match ? match.name : user.email };
       }, [user, teamMembers]);
 
-      const showToast = (message, type = 'success') => {
-        setToast({ message, type });
+      // FIX #1 cont. — datalist uses the already-resolved name, so there's no
+      // mix of emails vs. names in the dropdown
+      const allUserOptions = useMemo(() => {
+        const opts = new Set(['Unassigned']);
+        opts.add(activeUserRole.name);          // resolved name or email
+        teamMembers.forEach(m => opts.add(m.name));
+        return Array.from(opts);
+      }, [activeUserRole.name, teamMembers]);
+
+      const showToast = (msg, type = 'success') => {
+        setToast({ message: msg, type });
         setTimeout(() => setToast(null), 3000);
       };
 
-      // Reset states on view change
+      // FIX #2 — sync controlled routing inputs whenever the open record changes
+      useEffect(() => {
+        setAssignedToInput(activeRecordItem?.assignedTo ?? '');
+        setQcReviewerInput(activeRecordItem?.qcReviewer ?? '');
+      }, [activeRecordItem?.id]);
+
+      // Reset transient state when navigating away
       useEffect(() => {
         if (currentView === 'intake') {
-          setIntakeProject('');
-          setIntakeType('new');
-          setIntakeBaseId('');
-          setIntakeTitle('');
-          setIntakeSubtitle('');
-          setIntakeContractor('');
-          setIntakeRevision(0);
-          setIntakeSlaDays(14);
-          setIntakeComponents('');
-          setIntakeDisciplines('');
-          setIntakeRelatedDocs('');
-          setIntakeFile(null);
+          setIntakeProject(''); setIntakeType('new'); setIntakeBaseId('');
+          setIntakeTitle(''); setIntakeSubtitle(''); setIntakeContractor('');
+          setIntakeRevision(0); setIntakeSlaDays(14); setIntakeComponents('');
+          setIntakeDisciplines(''); setIntakeRelatedDocs(''); setIntakeFile(null);
           setUploadProgress(0);
         }
         if (currentView !== 'detail') {
-          setIsEditing(false);
-          setNewComment('');
-          setOutgoingFile(null);
-          setUploadProgress(0);
+          setIsEditing(false); setNewComment(''); setOutgoingFile(null); setUploadProgress(0);
         }
-        if (currentView !== 'projects') {
-          setProjForm({ id: '', name: '', client: '' });
-          setIsEditingProj(false);
-        }
-        if (currentView !== 'team') {
-          setTeamForm({ id: '', name: '', email: '', role: 'Structural Engineer' });
-          setIsEditingTeam(false);
-        }
+        if (currentView !== 'projects') { setProjForm({ id:'', name:'', client:'' }); setIsEditingProj(false); }
+        if (currentView !== 'team')     { setTeamForm({ id:'', name:'', email:'', role:'Structural Engineer' }); setIsEditingTeam(false); }
       }, [currentView, activeModule]);
 
       useEffect(() => {
         if (intakeType === 'revision' && intakeBaseId) {
-          const baseRec = activeRecords.find(s => s.id === intakeBaseId);
-          if (baseRec) {
-            setIntakeTitle(baseRec.title);
-            setIntakeSubtitle(baseRec.subtitle || '');
-            setIntakeContractor(baseRec.contractor);
-            setIntakeRevision(Number(baseRec.revision) + 1);
-            setIntakeSlaDays(baseRec.slaDays || 14);
-            setIntakeRelatedDocs(baseRec.relatedDocs || '');
+          const base = activeRecords.find(s => s.id === intakeBaseId);
+          if (base) {
+            setIntakeTitle(base.title); setIntakeSubtitle(base.subtitle || '');
+            setIntakeContractor(base.contractor); setIntakeRevision(Number(base.revision) + 1);
+            setIntakeSlaDays(base.slaDays || 14); setIntakeRelatedDocs(base.relatedDocs || '');
           }
         }
       }, [intakeType, intakeBaseId, activeRecords]);
 
-      // --------------------------------------------------------------------------
-      // AUTHENTICATION HANDLERS
-      // --------------------------------------------------------------------------
+      // ── Auth listener ──────────────────────────────────────────────────────────
       useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
-          setUser(currentUser);
-          setAuthLoading(false);
-        });
-        return () => unsubscribe();
+        const unsub = auth.onAuthStateChanged(u => { setUser(u); setAuthLoading(false); });
+        return () => unsub();
       }, []);
 
       const handleAuthSubmit = async (e) => {
-        e.preventDefault();
-        setAuthLoading(true);
+        e.preventDefault(); setAuthLoading(true);
         try {
-          if (authMode === 'login') {
-            await auth.signInWithEmailAndPassword(authEmail, authPassword);
-            showToast('Logged in successfully');
-          } else {
-            await auth.createUserWithEmailAndPassword(authEmail, authPassword);
-            showToast('Account created successfully');
-          }
-        } catch (error) {
-          console.error("Auth error:", error);
-          showToast(error.message, 'error');
-        } finally {
-          setAuthLoading(false);
-        }
+          if (authMode === 'login') { await auth.signInWithEmailAndPassword(authEmail, authPassword); showToast('Logged in successfully'); }
+          else { await auth.createUserWithEmailAndPassword(authEmail, authPassword); showToast('Account created'); }
+        } catch (err) { showToast(err.message, 'error'); }
+        finally { setAuthLoading(false); }
       };
 
-      const handleLogout = async () => {
-        await auth.signOut();
-        showToast('Logged out');
-      };
+      const handleLogout = async () => { await auth.signOut(); showToast('Logged out'); };
 
-      // --------------------------------------------------------------------------
-      // FIRESTORE SYNC (RECORDS, PROJECTS, TEAM)
-      // --------------------------------------------------------------------------
+      // ── Firestore listeners ────────────────────────────────────────────────────
+      // FIX #3 — activeRecordItem?.id removed from deps; use ref inside callback
       useEffect(() => {
-        if (!user) return; 
+        if (!user) return;
         setLoadingData(true);
-        
-        // Sync Active Module Records
-        const recordsUnsubscribe = db.collection(activeModule).onSnapshot(
-          (snapshot) => {
-            const fetchedData = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-            fetchedData.sort((a, b) => new Date(b.dateReceived) - new Date(a.dateReceived));
-            setActiveRecords(fetchedData);
-            
-            if (activeRecordItem) {
-              const updatedActive = fetchedData.find(s => s.id === activeRecordItem.id);
-              if (updatedActive) setActiveRecordItem(updatedActive);
-            }
-            setLoadingData(false);
-          },
-          (error) => {
-            console.error("Firestore sync error:", error);
-            setLoadingData(false);
-            if(error.code === 'permission-denied'){
-               showToast('Permission denied. Check Firestore security rules.', 'error');
-            }
+
+        const recUnsub = db.collection(activeModule).onSnapshot(snap => {
+          const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          data.sort((a, b) => new Date(b.dateReceived) - new Date(a.dateReceived));
+          setActiveRecords(data);
+          // Keep the open detail record in sync using the ref (not stale closure)
+          if (activeRecordIdRef.current) {
+            const updated = data.find(s => s.id === activeRecordIdRef.current);
+            if (updated) setActiveRecordItem(updated);
           }
-        );
+          setLoadingData(false);
+        }, err => {
+          console.error(err);
+          setLoadingData(false);
+          if (err.code === 'permission-denied') showToast('Permission denied.', 'error');
+        });
 
-        // Sync Projects
-        const projectsUnsubscribe = db.collection('projects').onSnapshot(
-          (snapshot) => {
-             const fetchedProjects = snapshot.docs.map(doc => ({
-               id: doc.id,
-               ...doc.data()
-             }));
-             fetchedProjects.sort((a, b) => a.name.localeCompare(b.name));
-             setProjects(fetchedProjects);
-          },
-          (error) => console.error("Project sync error:", error)
-        );
+        const projUnsub = db.collection('projects').onSnapshot(snap => {
+          const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          data.sort((a, b) => a.name.localeCompare(b.name));
+          setProjects(data);
+        }, err => console.error(err));
 
-        // Sync Team Members (Explicitly managed registry)
-        const teamUnsubscribe = db.collection('teamMembers').onSnapshot(
-          (snapshot) => {
-             const fetchedTeam = snapshot.docs.map(doc => ({
-               id: doc.id,
-               ...doc.data()
-             }));
-             fetchedTeam.sort((a, b) => a.name.localeCompare(b.name));
-             setTeamMembers(fetchedTeam);
-          },
-          (error) => console.error("Team sync error:", error)
-        );
+        const teamUnsub = db.collection('teamMembers').onSnapshot(snap => {
+          const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          data.sort((a, b) => a.name.localeCompare(b.name));
+          setTeamMembers(data);
+        }, err => console.error(err));
 
-        return () => {
-          recordsUnsubscribe();
-          projectsUnsubscribe();
-          teamUnsubscribe();
-        };
-      }, [user, activeModule, activeRecordItem?.id]);
+        return () => { recUnsub(); projUnsub(); teamUnsub(); };
+      }, [user, activeModule]); // ← activeRecordItem?.id intentionally removed
 
-      // --------------------------------------------------------------------------
-      // PROJECT MANAGEMENT HANDLERS
-      // --------------------------------------------------------------------------
+      // ── Project handlers ───────────────────────────────────────────────────────
       const handleProjectSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (isEditingProj) {
-                await db.collection('projects').doc(projForm.id).update({
-                    name: projForm.name,
-                    client: projForm.client
-                });
-                showToast('Project updated successfully.');
-            } else {
-                const projId = `PRJ-${Date.now().toString().slice(-4)}`;
-                await db.collection('projects').doc(projId).set({
-                    name: projForm.name,
-                    client: projForm.client,
-                    createdAt: new Date().toISOString()
-                });
-                showToast('Project added successfully.');
-            }
-            setProjForm({ id: '', name: '', client: '' });
-            setIsEditingProj(false);
-        } catch (error) {
-            console.error("Project save error:", error);
-            showToast('Error saving project.', 'error');
-        }
+          if (isEditingProj) {
+            await db.collection('projects').doc(projForm.id).update({ name: projForm.name, client: projForm.client });
+            showToast('Project updated.');
+          } else {
+            await db.collection('projects').doc(`PRJ-${Date.now().toString().slice(-4)}`).set({ name: projForm.name, client: projForm.client, createdAt: new Date().toISOString() });
+            showToast('Project added.');
+          }
+          setProjForm({ id:'', name:'', client:'' }); setIsEditingProj(false);
+        } catch (err) { showToast('Error saving project.', 'error'); }
       };
 
       const handleDeleteProject = async (id) => {
-         try {
-           await db.collection('projects').doc(id).delete();
-           showToast('Project removed successfully.');
-         } catch(err) {
-           console.error(err);
-           showToast('Failed to remove project.', 'error');
-         }
+        try { await db.collection('projects').doc(id).delete(); showToast('Project removed.'); }
+        catch (err) { showToast('Failed to remove project.', 'error'); }
       };
 
-      // --------------------------------------------------------------------------
-      // TEAM MANAGEMENT HANDLERS
-      // --------------------------------------------------------------------------
+      // ── Team handlers ──────────────────────────────────────────────────────────
       const handleTeamSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (isEditingTeam) {
-                await db.collection('teamMembers').doc(teamForm.id).update({
-                    name: teamForm.name,
-                    email: teamForm.email,
-                    role: teamForm.role
-                });
-                showToast('Team member updated successfully.');
-            } else {
-                const teamId = `USR-${Date.now().toString().slice(-4)}`;
-                await db.collection('teamMembers').doc(teamId).set({
-                    name: teamForm.name,
-                    email: teamForm.email,
-                    role: teamForm.role,
-                    createdAt: new Date().toISOString()
-                });
-                showToast('Team member added successfully.');
-            }
-            setTeamForm({ id: '', name: '', email: '', role: 'Structural Engineer' });
-            setIsEditingTeam(false);
-        } catch (error) {
-            console.error("Team save error:", error);
-            showToast('Error saving team member.', 'error');
-        }
+          if (isEditingTeam) {
+            await db.collection('teamMembers').doc(teamForm.id).update({ name: teamForm.name, email: teamForm.email, role: teamForm.role });
+            showToast('Team member updated.');
+          } else {
+            await db.collection('teamMembers').doc(`USR-${Date.now().toString().slice(-4)}`).set({ name: teamForm.name, email: teamForm.email, role: teamForm.role, createdAt: new Date().toISOString() });
+            showToast('Team member added.');
+          }
+          setTeamForm({ id:'', name:'', email:'', role:'Structural Engineer' }); setIsEditingTeam(false);
+        } catch (err) { showToast('Error saving team member.', 'error'); }
       };
 
       const handleDeleteTeamMember = async (id) => {
-         try {
-           await db.collection('teamMembers').doc(id).delete();
-           showToast('Team member removed successfully.');
-         } catch(err) {
-           console.error(err);
-           showToast('Failed to remove team member.', 'error');
-         }
+        try { await db.collection('teamMembers').doc(id).delete(); showToast('Team member removed.'); }
+        catch (err) { showToast('Failed to remove team member.', 'error'); }
       };
 
-      // --------------------------------------------------------------------------
-      // ADVANCED FILE UPLOAD HELPER
-      // --------------------------------------------------------------------------
-      const uploadFileWithProgress = (file, filePath) => {
-        return new Promise((resolve, reject) => {
-          const storageRef = storage.ref().child(filePath);
-          const uploadTask = storageRef.put(file);
+      // ── File upload helper ─────────────────────────────────────────────────────
+      const uploadFileWithProgress = (file, filePath) => new Promise((resolve, reject) => {
+        const task = storage.ref().child(filePath).put(file);
+        task.on('state_changed',
+          snap => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+          err  => { if (err.code === 'storage/unauthorized') showToast('Upload blocked: check Storage rules.', 'error'); reject(err); },
+          async () => { try { resolve(await task.snapshot.ref.getDownloadURL()); } catch(e) { reject(e); } }
+        );
+      });
 
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              setUploadProgress(progress);
-            },
-            (error) => {
-              console.error("Storage Error Detail:", error);
-              if (error.code === 'storage/unauthorized') {
-                showToast("Upload blocked: Verify Storage Security Rules in Console.", "error");
-              }
-              reject(error);
-            },
-            async () => {
-              try {
-                const url = await uploadTask.snapshot.ref.getDownloadURL();
-                resolve(url);
-              } catch(e) {
-                reject(e);
-              }
-            }
-          );
-        });
-      };
-
-      // --------------------------------------------------------------------------
-      // DATA & FILE HANDLERS (SUBMITTALS/RFIS)
-      // --------------------------------------------------------------------------
+      // ── Record handlers ────────────────────────────────────────────────────────
       const handleIntakeSubmit = async (e) => {
-        e.preventDefault();
-        if (!user) return;
-
-        setIsUploading(true);
-        setUploadProgress(0);
-        
-        const prefix = activeModule === 'submittals' ? 'SUB' : 'RFI';
+        e.preventDefault(); if (!user) return;
+        setIsUploading(true); setUploadProgress(0);
+        const prefix   = activeModule === 'submittals' ? 'SUB' : 'RFI';
         const recordId = `${prefix}-${Date.now().toString().slice(-6)}`;
-        const slaDays = Number(intakeSlaDays) || 14;
-        
-        let fileDownloadUrl = null;
-
+        const slaDays  = Number(intakeSlaDays) || 14;
+        let fileUrl    = null;
         try {
           if (intakeFile) {
-             const fileExt = intakeFile.name.split('.').pop();
-             const filePath = `projects/${intakeProject}/${activeModule}/${recordId}/Incoming_Rev${intakeRevision}.${fileExt}`;
-             
-             showToast(`Initiating connection...`, 'success');
-             fileDownloadUrl = await uploadFileWithProgress(intakeFile, filePath);
+            const ext = intakeFile.name.split('.').pop();
+            fileUrl = await uploadFileWithProgress(intakeFile, `projects/${intakeProject}/${activeModule}/${recordId}/Incoming_Rev${intakeRevision}.${ext}`);
           }
-
-          const tags = {
-            components: intakeComponents.split(',').map(s => s.trim()).filter(s => s),
-            disciplines: intakeDisciplines.split(',').map(s => s.trim()).filter(s => s)
-          };
-          
+          const tags        = { components: intakeComponents.split(',').map(s => s.trim()).filter(Boolean), disciplines: intakeDisciplines.split(',').map(s => s.trim()).filter(Boolean) };
           const rawAssignee = e.target.elements.assignedTo.value.trim();
-
-          const newRecord = {
-            projectId: intakeProject,
-            projectName: projects.find(p => p.id === intakeProject)?.name || 'Unknown Project',
-            title: intakeTitle,
-            subtitle: intakeSubtitle || '',
-            contractor: intakeContractor,
-            revision: Number(intakeRevision),
-            baseSubmittalId: intakeBaseId || null, 
-            dateReceived: new Date().toISOString(),
-            slaDays: slaDays,
-            dueDate: new Date(Date.now() + slaDays * 24 * 60 * 60 * 1000).toISOString(),
+          await db.collection(activeModule).doc(recordId).set({
+            projectId: intakeProject, projectName: projects.find(p => p.id === intakeProject)?.name || 'Unknown',
+            title: intakeTitle, subtitle: intakeSubtitle || '', contractor: intakeContractor,
+            revision: Number(intakeRevision), baseSubmittalId: intakeBaseId || null,
+            dateReceived: new Date().toISOString(), slaDays,
+            dueDate: new Date(Date.now() + slaDays * 86400000).toISOString(),
             assignedTo: rawAssignee || 'Unassigned',
             internalStatus: (!rawAssignee || rawAssignee === 'Unassigned') ? 'Unassigned' : 'Assigned',
-            externalStatus: 'Pending',
-            incomingPdfRef: fileDownloadUrl, 
+            externalStatus: 'Pending', incomingPdfRef: fileUrl,
             incomingFileName: intakeFile ? intakeFile.name : null,
-            outgoingPdfRef: null,
-            outgoingFileName: null,
-            relatedDocs: intakeRelatedDocs.trim(),
-            comments: [], 
-            tags: tags,
-            loggedBy: activeUserRole.name,
-            loggedById: activeUserRole.id,
-            qcReviewer: '',
-            history: [{
-              timestamp: new Date().toISOString(),
-              action: `Ingested ${activeModule.slice(0, -1)}${intakeFile ? ' with attachment' : ''}`,
-              user: activeUserRole.name
-            }]
-          };
-
-          await db.collection(activeModule).doc(recordId).set(newRecord);
-          showToast(`${activeModule.slice(0, -1)} logged successfully!`);
+            outgoingPdfRef: null, outgoingFileName: null,
+            relatedDocs: intakeRelatedDocs.trim(), comments: [], tags,
+            loggedBy: activeUserRole.name, loggedById: activeUserRole.id, qcReviewer: '',
+            // Fresh record: plain array is correct here (no prior history to merge)
+            history: [{ timestamp: new Date().toISOString(), action: `Ingested ${activeModule.slice(0,-1)}${intakeFile ? ' with attachment' : ''}`, user: activeUserRole.name }]
+          });
+          showToast(`${termModule} logged successfully!`);
           setCurrentView('dashboard');
-        } catch (error) {
-          console.error("Error logging record:", error);
-          showToast('Error saving record or file upload failed.', 'error');
-        } finally {
-          setIsUploading(false);
-          setUploadProgress(0);
-        }
+        } catch (err) { console.error(err); showToast('Error saving record or upload failed.', 'error'); }
+        finally { setIsUploading(false); setUploadProgress(0); }
       };
 
       const handleUploadOutgoingFile = async () => {
         if (!outgoingFile || !activeRecordItem || !user) return;
-        
-        setIsUploading(true);
-        setUploadProgress(0);
+        setIsUploading(true); setUploadProgress(0);
         try {
-           const fileExt = outgoingFile.name.split('.').pop();
-           const filePath = `projects/${activeRecordItem.projectId}/${activeModule}/${activeRecordItem.id}/Markups_Rev${activeRecordItem.revision}.${fileExt}`;
-           
-           showToast(`Initiating connection...`, 'success');
-           const fileDownloadUrl = await uploadFileWithProgress(outgoingFile, filePath);
-
-           await db.collection(activeModule).doc(activeRecordItem.id).update({
-             outgoingPdfRef: fileDownloadUrl,
-             outgoingFileName: outgoingFile.name,
-             history: [
-               ...(activeRecordItem.history || []), 
-               {
-                 timestamp: new Date().toISOString(),
-                 action: `Uploaded Redlined Response (${outgoingFile.name})`,
-                 user: activeUserRole.name
-               }
-             ]
-           });
-           showToast('Markups uploaded successfully!');
-           setOutgoingFile(null);
-        } catch (error) {
-           console.error("Error uploading markups:", error);
-           showToast("Failed to upload markups.", "error");
-        } finally {
-           setIsUploading(false);
-           setUploadProgress(0);
-        }
+          const ext = outgoingFile.name.split('.').pop();
+          const url = await uploadFileWithProgress(outgoingFile, `projects/${activeRecordItem.projectId}/${activeModule}/${activeRecordItem.id}/Markups_Rev${activeRecordItem.revision}.${ext}`);
+          // FIX #4 — arrayUnion prevents overwriting history from a stale closure
+          await db.collection(activeModule).doc(activeRecordItem.id).update({
+            outgoingPdfRef: url, outgoingFileName: outgoingFile.name,
+            history: arrayUnion({ timestamp: new Date().toISOString(), action: `Uploaded Redlined Response (${outgoingFile.name})`, user: activeUserRole.name })
+          });
+          showToast('Markups uploaded!'); setOutgoingFile(null);
+        } catch (err) { showToast('Failed to upload markups.', 'error'); }
+        finally { setIsUploading(false); setUploadProgress(0); }
       };
 
+      // FIX #4 — arrayUnion for all status/routing updates
       const handleUpdateStatus = async (recordId, updateData) => {
         try {
           await db.collection(activeModule).doc(recordId).update({
             ...updateData,
-            history: [
-              ...(activeRecordItem.history || []), 
-              {
-                timestamp: new Date().toISOString(),
-                action: `Updated properties/status`,
-                user: activeUserRole.name
-              }
-            ]
+            history: arrayUnion({ timestamp: new Date().toISOString(), action: 'Updated properties/status', user: activeUserRole.name })
           });
-          showToast('Status updated successfully!');
-        } catch (error) {
-          console.error("Error updating record:", error);
-          showToast('Error updating record.', 'error');
-        }
+          showToast('Updated successfully!');
+        } catch (err) { showToast('Error updating record.', 'error'); }
       };
 
       const handleDeleteRecord = async (recordId) => {
-        if (!window.confirm(`Are you sure you want to permanently delete this ${termModule}? This action cannot be undone and will remove all metadata from the database.`)) {
-            return;
-        }
+        if (!window.confirm(`Permanently delete this ${termModule}? This cannot be undone.`)) return;
         try {
-            await db.collection(activeModule).doc(recordId).delete();
-            showToast(`${termModule} permanently deleted.`);
-            setActiveRecordItem(null);
-            setCurrentView('dashboard');
-        } catch (error) {
-            console.error("Error deleting record:", error);
-            showToast(`Error deleting ${termModule}. Verify your security permissions.`, 'error');
-        }
+          await db.collection(activeModule).doc(recordId).delete();
+          showToast(`${termModule} deleted.`); setActiveRecordItem(null); setCurrentView('dashboard');
+        } catch (err) { showToast(`Error deleting ${termModule}.`, 'error'); }
       };
 
+      // FIX #4 — arrayUnion
       const handleEditSubmit = async (e) => {
         e.preventDefault();
         try {
           const newSlaDays = Number(editFormData.slaDays) || 14;
-          const newDueDate = new Date(new Date(activeRecordItem.dateReceived).getTime() + newSlaDays * 24 * 60 * 60 * 1000).toISOString();
-
+          const newDueDate = new Date(new Date(activeRecordItem.dateReceived).getTime() + newSlaDays * 86400000).toISOString();
           await db.collection(activeModule).doc(activeRecordItem.id).update({
-            title: editFormData.title,
-            subtitle: editFormData.subtitle,
-            contractor: editFormData.contractor,
-            revision: Number(editFormData.revision),
-            slaDays: newSlaDays,
-            dueDate: newDueDate,
-            relatedDocs: editFormData.relatedDocs,
-            history: [
-              ...(activeRecordItem.history || []), 
-              {
-                timestamp: new Date().toISOString(),
-                action: `Edited Metadata`,
-                user: activeUserRole.name
-              }
-            ]
+            title: editFormData.title, subtitle: editFormData.subtitle,
+            contractor: editFormData.contractor, revision: Number(editFormData.revision),
+            slaDays: newSlaDays, dueDate: newDueDate, relatedDocs: editFormData.relatedDocs,
+            history: arrayUnion({ timestamp: new Date().toISOString(), action: 'Edited Metadata', user: activeUserRole.name })
           });
-          setIsEditing(false);
-          showToast('Properties updated.');
-        } catch (error) {
-          console.error("Error saving edits:", error);
-          showToast('Error saving edits.', 'error');
-        }
+          setIsEditing(false); showToast('Properties updated.');
+        } catch (err) { showToast('Error saving edits.', 'error'); }
       };
 
       const handleAddComment = async (e) => {
-        e.preventDefault();
-        if (!newComment.trim()) return;
-
-        const commentObj = {
-          id: Date.now().toString(),
-          text: newComment.trim(),
-          user: activeUserRole.name,
-          timestamp: new Date().toISOString()
-        };
-
-        const updatedComments = [...(activeRecordItem.comments || []), commentObj];
-
+        e.preventDefault(); if (!newComment.trim()) return;
+        const c = { id: Date.now().toString(), text: newComment.trim(), user: activeUserRole.name, timestamp: new Date().toISOString() };
         try {
-          await db.collection(activeModule).doc(activeRecordItem.id).update({
-            comments: updatedComments
-          });
+          // Comments use arrayUnion too — safe concurrent appends
+          await db.collection(activeModule).doc(activeRecordItem.id).update({ comments: arrayUnion(c) });
           setNewComment('');
-        } catch (error) {
-          console.error("Error adding comment:", error);
-          showToast('Error adding comment.', 'error');
-        }
+        } catch (err) { showToast('Error adding comment.', 'error'); }
       };
 
       const handleQuickCommentSubmit = async (e) => {
-        e.preventDefault();
-        if (!quickCommentText.trim() || !quickCommentModal) return;
-
-        const commentObj = {
-          id: Date.now().toString(),
-          text: quickCommentText.trim(),
-          user: activeUserRole.name,
-          timestamp: new Date().toISOString()
-        };
-
-        const updatedComments = [...(quickCommentModal.comments || []), commentObj];
-
+        e.preventDefault(); if (!quickCommentText.trim() || !quickCommentModal) return;
+        const c = { id: Date.now().toString(), text: quickCommentText.trim(), user: activeUserRole.name, timestamp: new Date().toISOString() };
         try {
-          await db.collection(activeModule).doc(quickCommentModal.id).update({
-            comments: updatedComments
-          });
-          showToast('Comment added successfully.');
-          setQuickCommentModal(null);
-          setQuickCommentText('');
-        } catch (error) {
-          console.error("Error adding comment:", error);
-          showToast('Error adding comment.', 'error');
-        }
+          await db.collection(activeModule).doc(quickCommentModal.id).update({ comments: arrayUnion(c) });
+          showToast('Comment added.'); setQuickCommentModal(null); setQuickCommentText('');
+        } catch (err) { showToast('Error adding comment.', 'error'); }
       };
 
-      const exportToCSV = () => {
-        const moduleLabel = activeModule === 'submittals' ? 'Submittal' : 'RFI';
-        const revLabel = activeModule === 'submittals' ? 'Revision' : 'RFI No.';
-        const subLabel = activeModule === 'submittals' ? 'Spec Reference' : 'Proposed Solution';
+      // ── Derived data ───────────────────────────────────────────────────────────
+      const isRfi       = activeModule === 'rfis';
+      const termModule  = isRfi ? 'RFI' : 'Submittal';
+      const termRev     = isRfi ? 'RFI No.' : 'Revision';
+      const termSubtitle= isRfi ? 'Proposed Solution / Reason' : 'Description / Spec Reference';
 
-        const headers = [
-          `${moduleLabel} ID`, revLabel, "Title", subLabel, "Project", 
-          "Contractor", "Logged By", "Internal Status", "External Status", "Assigned To", "QC Reviewer", 
-          "Date Received", "SLA Days", "Due Date", "Component Tags", "Discipline Tags", "Related Plan Sheets"
-        ];
-        
-        const rows = treeRecords.map(sub => [
-          sub.id,
-          sub.revision,
-          `"${sub.title.replace(/"/g, '""')}"`,
-          `"${(sub.subtitle || '').replace(/"/g, '""')}"`,
-          `"${sub.projectName.replace(/"/g, '""')}"`,
-          `"${sub.contractor.replace(/"/g, '""')}"`,
-          `"${(sub.loggedBy || 'System Legacy').replace(/"/g, '""')}"`,
-          sub.internalStatus,
-          sub.externalStatus,
-          `"${(sub.assignedTo || 'Unassigned').replace(/"/g, '""')}"`,
-          `"${(sub.qcReviewer || '').replace(/"/g, '""')}"`,
-          new Date(sub.dateReceived).toLocaleDateString(),
-          sub.slaDays,
-          new Date(sub.dueDate).toLocaleDateString(),
-          `"${(sub.tags?.components || []).join(', ')}"`,
-          `"${(sub.tags?.disciplines || []).join(', ')}"`,
-          `"${(sub.relatedDocs || '').replace(/"/g, '""')}"`
-        ]);
-
-        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `${moduleLabel}_Log_Export_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast('Export triggered successfully.');
-      };
-
-      // --------------------------------------------------------------------------
-      // DERIVED DATA
-      // --------------------------------------------------------------------------
-      const filteredRecords = activeRecords.filter(sub => {
-        const matchesSearch = sub.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              sub.projectName.toLowerCase().includes(searchQuery.toLowerCase());
-        if (dashboardTab === 'my-queue') {
-          return matchesSearch && sub.assignedTo === activeUserRole.name && sub.internalStatus !== 'Sent Out';
-        }
-        return matchesSearch;
+      const filteredRecords = activeRecords.filter(s => {
+        const matchSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.projectName.toLowerCase().includes(searchQuery.toLowerCase());
+        if (dashboardTab === 'my-queue') return matchSearch && s.assignedTo === activeUserRole.name && s.internalStatus !== 'Sent Out';
+        return matchSearch;
       });
 
-      const treeRecords = React.useMemo(() => {
-        const subMap = {};
-        filteredRecords.forEach(s => { subMap[s.id] = { ...s, children: [] }; });
-
+      const treeRecords = useMemo(() => {
+        const map = {};
+        filteredRecords.forEach(s => { map[s.id] = { ...s, children: [] }; });
         const roots = [];
         filteredRecords.forEach(s => {
-          if (s.baseSubmittalId && subMap[s.baseSubmittalId]) {
-            subMap[s.baseSubmittalId].children.push(subMap[s.id]);
-          } else {
-            roots.push(subMap[s.id]);
-          }
+          if (s.baseSubmittalId && map[s.baseSubmittalId]) map[s.baseSubmittalId].children.push(map[s.id]);
+          else roots.push(map[s.id]);
         });
-
-        const getMaxDate = (node) => {
-          let maxDate = new Date(node.dateReceived).getTime();
-          node.children.forEach(child => {
-            const childMax = getMaxDate(child);
-            if (childMax > maxDate) maxDate = childMax;
-          });
-          return maxDate;
-        };
-
+        const getMaxDate = n => { let m = new Date(n.dateReceived).getTime(); n.children.forEach(c => { const cm = getMaxDate(c); if (cm > m) m = cm; }); return m; };
         roots.sort((a, b) => getMaxDate(b) - getMaxDate(a));
-
-        const flatTree = [];
+        const flat = [];
         roots.forEach(root => {
-          const allItems = [root, ...root.children];
-          allItems.sort((a, b) => a.revision - b.revision);
-          
-          const virtualGroup = {
-            isVirtual: true,
-            id: `GROUP-${root.id}`,
-            title: root.title,
-            projectName: root.projectName,
-            contractor: root.contractor,
-            itemCount: allItems.length,
-            indentLevel: 0
-          };
-          
-          flatTree.push(virtualGroup);
-          
-          allItems.forEach(item => {
-            item.indentLevel = 1;
-            flatTree.push(item);
-          });
+          const all = [root, ...root.children].sort((a, b) => a.revision - b.revision);
+          flat.push({ isVirtual: true, id: `GROUP-${root.id}`, title: root.title, projectName: root.projectName, contractor: root.contractor, itemCount: all.length });
+          all.forEach(item => { item.indentLevel = 1; flat.push(item); });
         });
-        return flatTree;
+        return flat;
       }, [filteredRecords]);
 
-      const isRfi = activeModule === 'rfis';
-      const termModule = isRfi ? 'RFI' : 'Submittal';
-      const termRev = isRfi ? 'RFI No.' : 'Revision';
-      const termSubtitle = isRfi ? 'Proposed Solution / Reason' : 'Description / Spec Reference';
+      // FIX #5 — exportToCSV moved after treeRecords so it always closes over current value
+      const exportToCSV = () => {
+        const lbl = isRfi ? 'RFI' : 'Submittal';
+        const headers = [`${lbl} ID`, termRev, 'Title', termSubtitle, 'Project', 'Contractor', 'Logged By', 'Internal Status', 'External Status', 'Assigned To', 'QC Reviewer', 'Date Received', 'SLA Days', 'Due Date', 'Components', 'Disciplines', 'Related Docs'];
+        const q = s => `"${(s||'').replace(/"/g,'""')}"`;
+        const rows = treeRecords.filter(r => !r.isVirtual).map(s => [
+          s.id, s.revision, q(s.title), q(s.subtitle), q(s.projectName), q(s.contractor), q(s.loggedBy),
+          s.internalStatus, s.externalStatus, q(s.assignedTo||'Unassigned'), q(s.qcReviewer),
+          new Date(s.dateReceived).toLocaleDateString(), s.slaDays, new Date(s.dueDate).toLocaleDateString(),
+          q((s.tags?.components||[]).join(', ')), q((s.tags?.disciplines||[]).join(', ')), q(s.relatedDocs)
+        ]);
+        const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const a = document.createElement('a'); a.href = encodeURI(csv);
+        a.download = `${lbl}_Log_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        showToast('Export complete.');
+      };
 
-      // --------------------------------------------------------------------------
-      // RENDER: AUTHENTICATION VIEW
-      // --------------------------------------------------------------------------
-      if (authLoading) {
-        return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="animate-pulse flex flex-col items-center">
-              <UploadCloud className="w-12 h-12 text-blue-600 mb-4" />
-              <p className="text-slate-600 font-medium">Initializing Secure Environment...</p>
+      // ── Auth loading / login screens ───────────────────────────────────────────
+      if (authLoading) return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="animate-pulse flex flex-col items-center">
+            <UploadCloud className="w-12 h-12 text-blue-600 mb-4" />
+            <p className="text-slate-600 font-medium">Initializing Secure Environment...</p>
+          </div>
+        </div>
+      );
+
+      if (!user) return (
+        <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="flex justify-center"><div className="bg-slate-800 p-3 rounded-xl shadow-lg"><Layers className="w-8 h-8 text-white" /></div></div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">Bridge<span className="text-blue-600">Sync</span> Engineering</h2>
+            <p className="mt-2 text-center text-sm text-slate-600">{authMode === 'login' ? 'Sign in to access secure project records' : 'Register a new engineering account'}</p>
+          </div>
+          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200">
+              <form className="space-y-6" onSubmit={handleAuthSubmit}>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Email</label>
+                  <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Password</label>
+                  <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                </div>
+                <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                  {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+              <div className="mt-6 text-center">
+                <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                  {authMode === 'login' ? 'Need an account? Register here.' : 'Already have an account? Sign in.'}
+                </button>
+              </div>
             </div>
           </div>
-        );
-      }
-
-      if (!user) {
-        return (
-          <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-              <div className="flex justify-center">
-                <div className="bg-slate-800 p-3 rounded-xl shadow-lg">
-                  <Layers className="w-8 h-8 text-white" />
-                </div>
-              </div>
-              <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
-                Bridge<span className="text-blue-600">Sync</span> Engineering
-              </h2>
-              <p className="mt-2 text-center text-sm text-slate-600">
-                {authMode === 'login' ? 'Sign in to access secure project records' : 'Register a new engineering account'}
-              </p>
-            </div>
-
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-              <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200">
-                <form className="space-y-6" onSubmit={handleAuthSubmit}>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Email address</label>
-                    <div className="mt-1">
-                      <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700">Password</label>
-                    <div className="mt-1">
-                      <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                      {authMode === 'login' ? 'Sign In' : 'Create Account'}
-                    </button>
-                  </div>
-                </form>
-
-                <div className="mt-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-300" />
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-2 bg-white text-slate-500">Or</span>
-                    </div>
-                  </div>
-                  <div className="mt-6 text-center">
-                    <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                      {authMode === 'login' ? 'Need an account? Register here.' : 'Already have an account? Sign in.'}
-                    </button>
-                  </div>
-                </div>
+          {toast && (
+            <div className="fixed bottom-4 right-4 z-50">
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type==='error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                {toast.type==='error' ? <AlertCircle className="w-5 h-5"/> : <CheckCircle className="w-5 h-5"/>}
+                <p className="text-sm font-medium">{toast.message}</p>
+                <button onClick={() => setToast(null)}><X className="w-4 h-4 text-slate-400"/></button>
               </div>
             </div>
-            {toast && (
-              <div className="fixed bottom-4 right-4 z-50">
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border transition-all duration-300 ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
-                  {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-                  <p className="text-sm font-medium">{toast.message}</p>
-                  <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-600">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      }
+          )}
+        </div>
+      );
 
-      // --------------------------------------------------------------------------
-      // RENDER: MAIN APP VIEW
-      // --------------------------------------------------------------------------
+      // ── Main App ───────────────────────────────────────────────────────────────
       return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-          
-          {/* Dynamic Datalist for Autocomplete routing */}
+
           <datalist id="user-list">
-            {allUserOptions.map(name => (
-              <option key={name} value={name} />
-            ))}
+            {allUserOptions.map(n => <option key={n} value={n} />)}
           </datalist>
 
-          {/* HEADER TOP NAVIGATION */}
+          {/* HEADER */}
           <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
               <div className="flex items-center gap-6">
-                {/* Logo Area */}
                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
-                  <div className="bg-slate-800 p-2 rounded-lg">
-                    {isRfi ? <FileQuestion className="w-5 h-5 text-white" /> : <Layers className="w-5 h-5 text-white" />}
-                  </div>
+                  <div className="bg-slate-800 p-2 rounded-lg">{isRfi ? <FileQuestion className="w-5 h-5 text-white"/> : <Layers className="w-5 h-5 text-white"/>}</div>
                   <div>
                     <h1 className="font-bold text-lg leading-tight text-slate-900">Bridge<span className="text-blue-600">Sync</span></h1>
                     <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Engineering Hub</p>
                   </div>
                 </div>
-
-                {/* THE CONTEXT SWITCHER */}
                 <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 ml-4">
-                  <button 
-                    onClick={() => { setActiveModule('submittals'); setCurrentView('dashboard'); }}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!isRfi && currentView !== 'projects' && currentView !== 'team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    <Layers className="w-4 h-4" /> Submittals
+                  <button onClick={() => { setActiveModule('submittals'); setCurrentView('dashboard'); }}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!isRfi && currentView!=='projects' && currentView!=='team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <Layers className="w-4 h-4"/> Submittals
                   </button>
-                  <button 
-                    onClick={() => { setActiveModule('rfis'); setCurrentView('dashboard'); }}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${isRfi && currentView !== 'projects' && currentView !== 'team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    <FileQuestion className="w-4 h-4" /> RFIs
+                  <button onClick={() => { setActiveModule('rfis'); setCurrentView('dashboard'); }}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${isRfi && currentView!=='projects' && currentView!=='team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <FileQuestion className="w-4 h-4"/> RFIs
                   </button>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-6">
-                
-                <button 
-                  onClick={() => setCurrentView('projects')}
-                  className={`flex items-center gap-2 hover:bg-slate-100 text-slate-600 px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentView === 'projects' ? 'bg-slate-100 text-blue-600' : ''}`}
-                >
-                  <Briefcase className="w-4 h-4" /> Projects
+              <div className="flex items-center gap-4">
+                <button onClick={() => setCurrentView('projects')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 text-slate-600 ${currentView==='projects' ? 'bg-slate-100 text-blue-600' : ''}`}>
+                  <Briefcase className="w-4 h-4"/> Projects
                 </button>
-
-                <button 
-                  onClick={() => setCurrentView('team')}
-                  className={`flex items-center gap-2 hover:bg-slate-100 text-slate-600 px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentView === 'team' ? 'bg-slate-100 text-blue-600' : ''}`}
-                >
-                  <UsersIcon className="w-4 h-4" /> Team
+                <button onClick={() => setCurrentView('team')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 text-slate-600 ${currentView==='team' ? 'bg-slate-100 text-blue-600' : ''}`}>
+                  <UsersIcon className="w-4 h-4"/> Team
                 </button>
-
-                <button 
-                  onClick={() => setCurrentView('intake')}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> Log {termModule}
+                <button onClick={() => setCurrentView('intake')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm">
+                  <Plus className="w-4 h-4"/> Log {termModule}
                 </button>
-                
-                {/* User Auth Info & Logout */}
-                <div className="flex items-center gap-3 border-slate-200 pl-4 border-l">
+                <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
                   <div className="text-right hidden sm:block">
-                    <p className="text-xs font-bold text-slate-900">{user.email}</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Authenticated</p>
+                    {/* FIX #1 — shows resolved name, not always raw email */}
+                    <p className="text-xs font-bold text-slate-900">{activeUserRole.name}</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{user.email}</p>
                   </div>
                   <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Sign Out">
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-5 h-5"/>
                   </button>
                 </div>
-
               </div>
             </div>
           </header>
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            
-            {/* VIEW: PROJECT ADMINISTRATION */}
+
+            {/* ── PROJECTS ── */}
             {currentView === 'projects' && (
               <div className="space-y-6 max-w-5xl mx-auto">
                 <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
-                  <div className="bg-slate-800 p-2 rounded-lg">
-                    <Briefcase className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Project Administration</h2>
-                    <p className="text-sm text-slate-500">Manage active bridge contracts and system metadata.</p>
-                  </div>
+                  <div className="bg-slate-800 p-2 rounded-lg"><Briefcase className="w-6 h-6 text-white"/></div>
+                  <div><h2 className="text-2xl font-bold text-slate-900">Project Administration</h2><p className="text-sm text-slate-500">Manage active bridge contracts and system metadata.</p></div>
                 </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Left Column: Form */}
                   <div className="lg:col-span-1">
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">
-                        {isEditingProj ? 'Edit Project Details' : 'Initialize New Project'}
-                      </h3>
+                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{isEditingProj ? 'Edit Project' : 'New Project'}</h3>
                       <form onSubmit={handleProjectSubmit} className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Contract / Project Name</label>
-                          <input 
-                            type="text" 
-                            required 
-                            placeholder="e.g. I-95 Viaduct Replacement"
-                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={projForm.name} 
-                            onChange={e => setProjForm({...projForm, name: e.target.value})} 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Client / Owner</label>
-                          <input 
-                            type="text" 
-                            required 
-                            placeholder="e.g. State DOT"
-                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={projForm.client} 
-                            onChange={e => setProjForm({...projForm, client: e.target.value})} 
-                          />
-                        </div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Contract / Project Name</label><input type="text" required placeholder="e.g. I-95 Viaduct Replacement" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={projForm.name} onChange={e => setProjForm({...projForm, name: e.target.value})} /></div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Client / Owner</label><input type="text" required placeholder="e.g. State DOT" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={projForm.client} onChange={e => setProjForm({...projForm, client: e.target.value})} /></div>
                         <div className="flex justify-end gap-2 pt-4">
-                          {isEditingProj && (
-                            <button type="button" onClick={() => { setIsEditingProj(false); setProjForm({id: '', name:'', client:''}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
-                          )}
-                          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">
-                            {isEditingProj ? 'Update Configuration' : 'Create Project'}
-                          </button>
+                          {isEditingProj && <button type="button" onClick={() => { setIsEditingProj(false); setProjForm({id:'',name:'',client:''}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>}
+                          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">{isEditingProj ? 'Update' : 'Create Project'}</button>
                         </div>
                       </form>
                     </div>
                   </div>
-
-                  {/* Right Column: Database Table */}
                   <div className="lg:col-span-2">
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                       <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                            <th className="p-4 font-semibold">Project Metadata</th>
-                            <th className="p-4 font-semibold">Client Authority</th>
-                            <th className="p-4 font-semibold text-right">Administrative Actions</th>
-                          </tr>
-                        </thead>
+                        <thead><tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><th className="p-4 font-semibold">Project</th><th className="p-4 font-semibold">Client</th><th className="p-4 font-semibold text-right">Actions</th></tr></thead>
                         <tbody className="divide-y divide-slate-100">
-                          {projects.length === 0 ? (
-                            <tr>
-                              <td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">
-                                No projects configured. Initialize a project to begin tracking submittals.
-                              </td>
-                            </tr>
-                          ) : (
-                            projects.map(proj => (
-                              <tr key={proj.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-4">
-                                  <div className="font-bold text-slate-900">{proj.name}</div>
-                                  <div className="text-xs text-slate-500 mt-1 font-mono">System ID: {proj.id}</div>
-                                </td>
-                                <td className="p-4 text-sm font-medium text-slate-700">{proj.client}</td>
-                                <td className="p-4 text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <button 
-                                      onClick={() => {
-                                        setProjForm({ id: proj.id, name: proj.name, client: proj.client });
-                                        setIsEditingProj(true);
-                                      }}
-                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                      title="Edit Project"
-                                    >
-                                      <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                      onClick={() => {
-                                        if(window.confirm(`Are you sure you want to permanently remove "${proj.name}"? This action cannot be undone.`)) {
-                                          handleDeleteProject(proj.id);
-                                        }
-                                      }}
-                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                      title="Delete Project"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </td>
+                          {projects.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">No projects configured.</td></tr> :
+                            projects.map(p => (
+                              <tr key={p.id} className="hover:bg-slate-50">
+                                <td className="p-4"><div className="font-bold text-slate-900">{p.name}</div><div className="text-xs text-slate-500 font-mono">ID: {p.id}</div></td>
+                                <td className="p-4 text-sm font-medium text-slate-700">{p.client}</td>
+                                <td className="p-4 text-right"><div className="flex items-center justify-end gap-2">
+                                  <button onClick={() => { setProjForm({id:p.id,name:p.name,client:p.client}); setIsEditingProj(true); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-4 h-4"/></button>
+                                  <button onClick={() => { if(window.confirm(`Remove "${p.name}"?`)) handleDeleteProject(p.id); }} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4"/></button>
+                                </div></td>
                               </tr>
                             ))
-                          )}
+                          }
                         </tbody>
                       </table>
                     </div>
@@ -1053,126 +613,51 @@
               </div>
             )}
 
-            {/* VIEW: TEAM ADMINISTRATION */}
+            {/* ── TEAM ── */}
             {currentView === 'team' && (
               <div className="space-y-6 max-w-6xl mx-auto">
                 <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
-                  <div className="bg-slate-800 p-2 rounded-lg">
-                    <UsersIcon className="w-6 h-6 text-white" />
-                  </div>
+                  <div className="bg-slate-800 p-2 rounded-lg"><UsersIcon className="w-6 h-6 text-white"/></div>
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900">Team Management</h2>
-                    <p className="text-sm text-slate-500">Configure personnel for the assignment and routing dropdown menus.</p>
+                    {/* Inform the user of the email-matching behaviour */}
+                    <p className="text-sm text-slate-500">Add members here to populate routing dropdowns. <span className="font-semibold text-blue-600">Email must match the login email</span> so the member's name is used consistently in assignments and My Queue.</p>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Left Column: Form */}
                   <div className="lg:col-span-1">
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">
-                        {isEditingTeam ? 'Edit Team Member' : 'Add Team Member'}
-                      </h3>
+                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{isEditingTeam ? 'Edit Member' : 'Add Team Member'}</h3>
                       <form onSubmit={handleTeamSubmit} className="space-y-4">
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
-                          <input 
-                            type="text" 
-                            required 
-                            placeholder="e.g. Sarah Jenkins"
-                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={teamForm.name} 
-                            onChange={e => setTeamForm({...teamForm, name: e.target.value})} 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Email Address</label>
-                          <input 
-                            type="email" 
-                            required 
-                            placeholder="e.g. sjenkins@firm.com"
-                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={teamForm.email} 
-                            onChange={e => setTeamForm({...teamForm, email: e.target.value})} 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Firm Role / Title</label>
-                          <input 
-                            type="text" 
-                            placeholder="e.g. Structural Engineer"
-                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={teamForm.role} 
-                            onChange={e => setTeamForm({...teamForm, role: e.target.value})} 
-                          />
-                        </div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label><input type="text" required placeholder="e.g. Sarah Jenkins" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.name} onChange={e => setTeamForm({...teamForm, name: e.target.value})} /></div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Login Email</label><input type="email" required placeholder="e.g. sjenkins@firm.com" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.email} onChange={e => setTeamForm({...teamForm, email: e.target.value})} /></div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Role</label><input type="text" placeholder="e.g. Structural Engineer" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.role} onChange={e => setTeamForm({...teamForm, role: e.target.value})} /></div>
                         <div className="flex justify-end gap-2 pt-4">
-                          {isEditingTeam && (
-                            <button type="button" onClick={() => { setIsEditingTeam(false); setTeamForm({id: '', name:'', email:'', role:'Structural Engineer'}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
-                          )}
+                          {isEditingTeam && <button type="button" onClick={() => { setIsEditingTeam(false); setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>}
                           <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">
-                            <UserPlus className="w-4 h-4" />
-                            {isEditingTeam ? 'Update Member' : 'Add to Registry'}
+                            <UserPlus className="w-4 h-4"/>{isEditingTeam ? 'Update' : 'Add to Registry'}
                           </button>
                         </div>
                       </form>
                     </div>
                   </div>
-
-                  {/* Right Column: Database Table */}
                   <div className="lg:col-span-2">
                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                       <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                            <th className="p-4 font-semibold">Engineer Identity</th>
-                            <th className="p-4 font-semibold">Contact Info</th>
-                            <th className="p-4 font-semibold text-right">Actions</th>
-                          </tr>
-                        </thead>
+                        <thead><tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><th className="p-4 font-semibold">Engineer</th><th className="p-4 font-semibold">Email / Role</th><th className="p-4 font-semibold text-right">Actions</th></tr></thead>
                         <tbody className="divide-y divide-slate-100">
-                          {teamMembers.length === 0 ? (
-                            <tr>
-                              <td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">
-                                No team members configured. Add personnel to populate routing dropdowns.
-                              </td>
-                            </tr>
-                          ) : (
-                            teamMembers.map(member => (
-                              <tr key={member.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-4">
-                                  <div className="font-bold text-slate-900">{member.name}</div>
-                                  <div className="text-xs text-slate-500 mt-1">{member.role}</div>
-                                </td>
-                                <td className="p-4 text-sm font-medium text-slate-700">{member.email}</td>
-                                <td className="p-4 text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <button 
-                                      onClick={() => {
-                                        setTeamForm({ id: member.id, name: member.name, email: member.email, role: member.role });
-                                        setIsEditingTeam(true);
-                                      }}
-                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                      title="Edit Member"
-                                    >
-                                      <Edit2 className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                      onClick={() => {
-                                        if(window.confirm(`Remove "${member.name}" from the routing registry? Active submittals assigned to them will not be deleted.`)) {
-                                          handleDeleteTeamMember(member.id);
-                                        }
-                                      }}
-                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                      title="Remove Member"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                </td>
+                          {teamMembers.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">No team members configured.</td></tr> :
+                            teamMembers.map(m => (
+                              <tr key={m.id} className="hover:bg-slate-50">
+                                <td className="p-4"><div className="font-bold text-slate-900">{m.name}</div><div className="text-xs text-slate-500">{m.role}</div></td>
+                                <td className="p-4 text-sm text-slate-700">{m.email}</td>
+                                <td className="p-4 text-right"><div className="flex items-center justify-end gap-2">
+                                  <button onClick={() => { setTeamForm({id:m.id,name:m.name,email:m.email,role:m.role}); setIsEditingTeam(true); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-4 h-4"/></button>
+                                  <button onClick={() => { if(window.confirm(`Remove "${m.name}"?`)) handleDeleteTeamMember(m.id); }} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4"/></button>
+                                </div></td>
                               </tr>
                             ))
-                          )}
+                          }
                         </tbody>
                       </table>
                     </div>
@@ -1181,45 +666,28 @@
               </div>
             )}
 
-            {/* VIEW: DASHBOARD */}
+            {/* ── DASHBOARD ── */}
             {currentView === 'dashboard' && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <h2 className="text-2xl font-bold text-slate-900">{termModule} Register</h2>
-                  
                   <div className="flex items-center gap-2">
                     <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input 
-                        type="text" 
-                        placeholder="Search titles or projects..." 
-                        className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"/>
+                      <input type="text" placeholder="Search titles or projects..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                     </div>
-                    <button onClick={() => setCurrentView('analytics')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-sm font-medium shadow-sm transition-colors">
-                      <BarChart2 className="w-4 h-4" /> Analytics
-                    </button>
-                    <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors">
-                      <Download className="w-4 h-4" /> Export CSV
-                    </button>
+                    <button onClick={() => setCurrentView('analytics')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-sm font-medium shadow-sm"><BarChart2 className="w-4 h-4"/> Analytics</button>
+                    <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium shadow-sm"><Download className="w-4 h-4"/> Export CSV</button>
                   </div>
                 </div>
 
                 <div className="flex gap-4 border-b border-slate-200">
-                  <button 
-                    className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab === 'my-queue' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-                    onClick={() => setDashboardTab('my-queue')}
-                  >
-                    My Queue ({activeRecords.filter(s => s.assignedTo === activeUserRole.name && s.internalStatus !== 'Sent Out').length})
-                  </button>
-                  <button 
-                    className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-                    onClick={() => setDashboardTab('all')}
-                  >
-                    All Active {isRfi ? 'RFIs' : 'Submittals'}
-                  </button>
+                  {['my-queue','all'].map(tab => (
+                    <button key={tab} onClick={() => setDashboardTab(tab)}
+                      className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab===tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                      {tab==='my-queue' ? `My Queue (${activeRecords.filter(s => s.assignedTo===activeUserRole.name && s.internalStatus!=='Sent Out').length})` : `All Active ${isRfi?'RFIs':'Submittals'}`}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -1227,7 +695,7 @@
                     <div className="p-8 text-center text-slate-500">Loading {activeModule}...</div>
                   ) : filteredRecords.length === 0 ? (
                     <div className="p-12 text-center flex flex-col items-center">
-                      <CheckCircle className="w-12 h-12 text-green-500 mb-3 opacity-50" />
+                      <CheckCircle className="w-12 h-12 text-green-500 mb-3 opacity-50"/>
                       <h3 className="text-lg font-medium text-slate-900">All caught up!</h3>
                       <p className="text-slate-500 text-sm mt-1">No active items found in this view.</p>
                     </div>
@@ -1246,123 +714,68 @@
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {treeRecords.map(sub => {
-                            if (sub.isVirtual) {
-                              return (
-                                <tr key={sub.id} className="bg-slate-200/50 border-t-2 border-slate-300">
-                                  <td className="p-3 pl-4">
-                                    <div className="font-extrabold text-slate-900">{sub.title}</div>
-                                    <div className="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">{termModule} Thread • {sub.itemCount} Record{sub.itemCount > 1 ? 's' : ''}</div>
-                                  </td>
-                                  <td className="p-3">
-                                    <div className="text-sm font-bold text-slate-800">{sub.projectName}</div>
-                                    <div className="text-xs text-slate-600">{sub.contractor}</div>
-                                  </td>
-                                  <td className="p-3" colSpan="4"></td>
-                                </tr>
-                              );
-                            }
-
-                            const msElapsed = Date.now() - new Date(sub.dateReceived).getTime();
-                            const daysElapsed = Math.floor(msElapsed / (1000 * 60 * 60 * 24));
-                            const daysRemaining = (sub.slaDays || 14) - daysElapsed;
-                            const isLate = daysRemaining < 0;
-
+                            if (sub.isVirtual) return (
+                              <tr key={sub.id} className="bg-slate-200/50 border-t-2 border-slate-300">
+                                <td className="p-3 pl-4"><div className="font-extrabold text-slate-900">{sub.title}</div><div className="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">{termModule} Thread • {sub.itemCount} Record{sub.itemCount>1?'s':''}</div></td>
+                                <td className="p-3"><div className="text-sm font-bold text-slate-800">{sub.projectName}</div><div className="text-xs text-slate-600">{sub.contractor}</div></td>
+                                <td colSpan="4"></td>
+                              </tr>
+                            );
+                            const daysElapsed   = Math.floor((Date.now()-new Date(sub.dateReceived).getTime())/86400000);
+                            const daysRemaining = (sub.slaDays||14) - daysElapsed;
+                            const isLate        = daysRemaining < 0;
                             return (
                               <tr key={sub.id} className="hover:bg-slate-50 transition-colors group">
                                 <td className="p-4">
-                                  <div className="flex items-start gap-2" style={{ paddingLeft: `${sub.indentLevel * 1.5}rem` }}>
-                                    {sub.indentLevel > 0 && <CornerDownRight className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />}
+                                  <div className="flex items-start gap-2" style={{paddingLeft:`${sub.indentLevel*1.5}rem`}}>
+                                    {sub.indentLevel>0 && <CornerDownRight className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0"/>}
                                     <div>
                                       <div className="font-bold text-slate-900">{sub.title}</div>
                                       {sub.subtitle && <div className="text-sm text-slate-600 mb-0.5">{sub.subtitle}</div>}
                                       <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
                                         <span>ID: {sub.id} • {termRev} {sub.revision}</span>
-                                        {sub.relatedDocs && (
-                                          <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 rounded" title="Cross-Referenced Plan Sheets">
-                                            <LinkIcon className="w-3 h-3" /> {sub.relatedDocs}
-                                          </span>
-                                        )}
+                                        {sub.relatedDocs && <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 rounded"><LinkIcon className="w-3 h-3"/>{sub.relatedDocs}</span>}
                                       </div>
-                                      
-                                      {(sub.tags?.components?.length > 0 || sub.tags?.disciplines?.length > 0) && (
+                                      {(sub.tags?.components?.length>0 || sub.tags?.disciplines?.length>0) && (
                                         <div className="flex flex-wrap gap-1 mt-2">
-                                          {sub.tags.components?.map((tag, i) => (
-                                            <span key={`comp-${i}`} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                              <Tag className="w-3 h-3" /> {tag}
-                                            </span>
-                                          ))}
-                                          {sub.tags.disciplines?.map((tag, i) => (
-                                            <span key={`disc-${i}`} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-100">
-                                              {tag}
-                                            </span>
-                                          ))}
+                                          {sub.tags.components?.map((t,i) => <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"><Tag className="w-3 h-3"/>{t}</span>)}
+                                          {sub.tags.disciplines?.map((t,i) => <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-100">{t}</span>)}
                                         </div>
                                       )}
-                                      <div className="text-[10px] text-slate-400 mt-1.5 font-medium">Logged by: {sub.loggedBy || 'System Legacy'}</div>
+                                      <div className="text-[10px] text-slate-400 mt-1.5 font-medium">Logged by: {sub.loggedBy||'System Legacy'}</div>
                                     </div>
                                   </div>
                                 </td>
-                                <td className="p-4">
-                                  <div className="text-sm font-medium text-slate-800">{sub.projectName}</div>
-                                  <div className="text-xs text-slate-500 mt-0.5">{sub.contractor}</div>
-                                </td>
+                                <td className="p-4"><div className="text-sm font-medium text-slate-800">{sub.projectName}</div><div className="text-xs text-slate-500 mt-0.5">{sub.contractor}</div></td>
                                 <td className="p-4">
                                   <div className="text-xs text-slate-600 space-y-1">
-                                    <div><span className="text-slate-400 w-16 inline-block">Received:</span> <span className="font-medium text-slate-800">{new Date(sub.dateReceived).toLocaleDateString()}</span></div>
-                                    <div><span className="text-slate-400 w-16 inline-block">SLA:</span> <span className="font-medium text-slate-800">{sub.slaDays} Days</span></div>
-                                    <div><span className="text-slate-400 w-16 inline-block">Due:</span> <span className={`font-medium ${isLate ? 'text-red-600' : 'text-slate-800'}`}>{new Date(sub.dueDate).toLocaleDateString()}</span></div>
+                                    <div><span className="text-slate-400 w-16 inline-block">Received:</span><span className="font-medium text-slate-800"> {new Date(sub.dateReceived).toLocaleDateString()}</span></div>
+                                    <div><span className="text-slate-400 w-16 inline-block">SLA:</span><span className="font-medium text-slate-800"> {sub.slaDays} Days</span></div>
+                                    <div><span className="text-slate-400 w-16 inline-block">Due:</span><span className={`font-medium ${isLate?'text-red-600':'text-slate-800'}`}> {new Date(sub.dueDate).toLocaleDateString()}</span></div>
                                   </div>
                                 </td>
                                 <td className="p-4 space-y-2">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
-                                    ${sub.internalStatus === 'Sent Out' ? 'bg-green-50 text-green-700 border-green-200' : 
-                                      sub.internalStatus === 'In Review' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                                      sub.internalStatus === 'Ready for PM Approval' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
-                                      'bg-slate-100 text-slate-700 border-slate-200'}`}
-                                  >
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${sub.internalStatus==='Sent Out'?'bg-green-50 text-green-700 border-green-200':sub.internalStatus==='In Review'?'bg-blue-50 text-blue-700 border-blue-200':sub.internalStatus==='Ready for PM Approval'?'bg-purple-50 text-purple-700 border-purple-200':'bg-slate-100 text-slate-700 border-slate-200'}`}>
                                     {sub.internalStatus}
                                   </span>
                                   <div className="flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 flex-shrink-0">
-                                      {(sub.assignedTo || 'U').charAt(0).toUpperCase()}
-                                    </div>
-                                    <span className="text-xs text-slate-700 truncate max-w-[120px]" title={sub.assignedTo || 'Unassigned'}>
-                                      {sub.assignedTo || 'Unassigned'}
-                                    </span>
+                                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 flex-shrink-0">{(sub.assignedTo||'U').charAt(0).toUpperCase()}</div>
+                                    <span className="text-xs text-slate-700 truncate max-w-[120px]">{sub.assignedTo||'Unassigned'}</span>
                                   </div>
                                 </td>
                                 <td className="p-4">
-                                  <div className={`flex items-center gap-1.5 text-sm font-medium ${isLate ? 'text-red-600' : 'text-slate-600'}`}>
-                                    <Clock className="w-4 h-4" />
-                                    {daysElapsed} d Elapsed
-                                  </div>
-                                  <div className={`text-xs mt-1 font-semibold ${isLate ? 'text-red-500' : daysRemaining <= 3 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                                  <div className={`flex items-center gap-1.5 text-sm font-medium ${isLate?'text-red-600':'text-slate-600'}`}><Clock className="w-4 h-4"/>{daysElapsed} d Elapsed</div>
+                                  <div className={`text-xs mt-1 font-semibold ${isLate?'text-red-500':daysRemaining<=3?'text-amber-500':'text-emerald-600'}`}>
                                     {isLate ? `${Math.abs(daysRemaining)} d Overdue` : `${daysRemaining} d Remaining`}
                                   </div>
                                 </td>
                                 <td className="p-4 text-right">
                                   <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                      onClick={() => setQuickCommentModal(sub)}
-                                      className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 transition-colors"
-                                      title="Add Quick Comment"
-                                    >
-                                      <MessageSquare className="w-4 h-4" />
-                                      {sub.comments?.length > 0 && (
-                                        <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">
-                                          {sub.comments.length}
-                                        </span>
-                                      )}
+                                    <button onClick={() => setQuickCommentModal(sub)} className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Quick Comment">
+                                      <MessageSquare className="w-4 h-4"/>
+                                      {sub.comments?.length>0 && <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">{sub.comments.length}</span>}
                                     </button>
-                                    <button 
-                                      onClick={() => {
-                                        setActiveRecordItem(sub);
-                                        setCurrentView('detail');
-                                      }}
-                                      className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                                    >
-                                      Open Review
-                                    </button>
+                                    <button onClick={() => { setActiveRecordItem(sub); setCurrentView('detail'); }} className="text-sm font-medium text-blue-600 hover:text-blue-800">Open Review</button>
                                   </div>
                                 </td>
                               </tr>
@@ -1376,234 +789,92 @@
               </div>
             )}
 
-            {/* VIEW: INTAKE FORM */}
+            {/* ── INTAKE ── */}
             {currentView === 'intake' && (
               <div className="max-w-2xl mx-auto">
-                <button 
-                  onClick={() => setCurrentView('dashboard')}
-                  className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6 transition-colors"
-                  disabled={isUploading}
-                >
-                  <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-                </button>
-                
+                <button onClick={() => setCurrentView('dashboard')} disabled={isUploading} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6"><ArrowLeft className="w-4 h-4"/> Back to Dashboard</button>
                 <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
                   <div className="flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <FilePlus className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">Ingest {termModule}</h2>
-                      <p className="text-sm text-slate-500">Log and upload an incoming {activeModule.slice(0, -1)} package from a contractor.</p>
-                    </div>
+                    <div className="bg-blue-100 p-2 rounded-lg"><FilePlus className="w-6 h-6 text-blue-600"/></div>
+                    <div><h2 className="text-xl font-bold text-slate-900">Ingest {termModule}</h2><p className="text-sm text-slate-500">Log and upload an incoming {activeModule.slice(0,-1)} package.</p></div>
                   </div>
-
                   {projects.length === 0 ? (
                     <div className="p-8 text-center border-2 border-dashed border-amber-200 rounded-xl bg-amber-50">
-                      <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                      <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-3"/>
                       <h3 className="font-bold text-amber-800 mb-1">Configuration Required</h3>
-                      <p className="text-sm text-amber-700 mb-4">You must initialize at least one active Project before logging submittals or RFIs.</p>
+                      <p className="text-sm text-amber-700 mb-4">Initialize at least one project before logging.</p>
                       <button onClick={() => setCurrentView('projects')} className="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium hover:bg-amber-700">Go to Project Administration</button>
                     </div>
                   ) : (
                     <form onSubmit={handleIntakeSubmit} className="space-y-6">
-                      
                       <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
-                        <button 
-                          type="button"
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'new' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                          onClick={() => { setIntakeType('new'); setIntakeBaseId(''); setIntakeTitle(''); setIntakeContractor(''); setIntakeRevision(0); }}
-                        >
-                          New {termModule}
-                        </button>
-                        <button 
-                          type="button"
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'revision' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                          onClick={() => setIntakeType('revision')}
-                        >
-                          Revision to Existing
-                        </button>
+                        {['new','revision'].map(t => (
+                          <button key={t} type="button"
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType===t?'bg-white shadow-sm text-blue-600':'text-slate-500 hover:text-slate-700'}`}
+                            onClick={() => { setIntakeType(t); if(t==='new'){setIntakeBaseId('');setIntakeTitle('');setIntakeContractor('');setIntakeRevision(0);} }}>
+                            {t==='new' ? `New ${termModule}` : 'Revision to Existing'}
+                          </button>
+                        ))}
                       </div>
-
                       <div className="grid grid-cols-2 gap-6">
-                        <div className="col-span-2">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Project Alignment</label>
-                          <select 
-                            name="projectId" 
-                            required 
-                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                            value={intakeProject}
-                            onChange={(e) => { setIntakeProject(e.target.value); setIntakeBaseId(''); }}
-                          >
+                        <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
+                          <select required className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" value={intakeProject} onChange={e => { setIntakeProject(e.target.value); setIntakeBaseId(''); }}>
                             <option value="">Select a project...</option>
                             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                           </select>
                         </div>
-
-                        {intakeType === 'revision' && (
-                          <div className="col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Select Existing Base {termModule}</label>
-                            <select 
-                              name="baseSubmittalId"
-                              required={intakeType === 'revision'}
-                              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                              value={intakeBaseId}
-                              onChange={(e) => setIntakeBaseId(e.target.value)}
-                              disabled={!intakeProject}
-                            >
-                              <option value="">{intakeProject ? `Select a ${termModule} to revise...` : 'Select a project first...'}</option>
-                              {activeRecords
-                                .filter(s => s.projectId === intakeProject)
-                                .map(s => <option key={s.id} value={s.id}>{s.id} - {termRev} {s.revision}: {s.title}</option>)
-                              }
+                        {intakeType==='revision' && (
+                          <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Select Base {termModule}</label>
+                            <select required className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" value={intakeBaseId} onChange={e => setIntakeBaseId(e.target.value)} disabled={!intakeProject}>
+                              <option value="">{intakeProject ? `Select a ${termModule}...` : 'Select a project first...'}</option>
+                              {activeRecords.filter(s => s.projectId===intakeProject).map(s => <option key={s.id} value={s.id}>{s.id} – {termRev} {s.revision}: {s.title}</option>)}
                             </select>
                           </div>
                         )}
-
-                        <div className="col-span-2">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">{isRfi ? 'RFI Question / Title' : 'Submittal Title'}</label>
-                          <input 
-                            type="text" 
-                            name="title" 
-                            required 
-                            placeholder={isRfi ? "e.g. Discrepancy at Pier 2 Elevation" : "e.g. Abutment 1 Concrete Mix Design"}
-                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={intakeTitle}
-                            onChange={(e) => setIntakeTitle(e.target.value)}
-                          />
+                        <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">{isRfi?'RFI Question / Title':'Submittal Title'}</label>
+                          <input type="text" name="title" required placeholder={isRfi?'e.g. Discrepancy at Pier 2':'e.g. Abutment 1 Concrete Mix Design'} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeTitle} onChange={e => setIntakeTitle(e.target.value)} />
                         </div>
-
-                        <div className="col-span-2">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">{termSubtitle}</label>
-                          <input 
-                            type="text" 
-                            name="subtitle" 
-                            placeholder={isRfi ? "e.g. Contractor proposes field welding." : "e.g. Spec Section 550 - Structural Steel Details"}
-                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={intakeSubtitle}
-                            onChange={(e) => setIntakeSubtitle(e.target.value)}
-                          />
+                        <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">{termSubtitle}</label>
+                          <input type="text" name="subtitle" placeholder={isRfi?'e.g. Contractor proposes field welding.':'e.g. Spec Section 550'} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeSubtitle} onChange={e => setIntakeSubtitle(e.target.value)} />
                         </div>
-                        
-                        <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
-                          <label className="block text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-600"/> Plan Sheets & Related Docs</label>
-                          <input 
-                            type="text" 
-                            placeholder="e.g. Sheet S-104, RFI-0042, Standard Det. 14A" 
-                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/30" 
-                            value={intakeRelatedDocs}
-                            onChange={(e) => setIntakeRelatedDocs(e.target.value)}
-                          />
-                          <p className="text-xs text-slate-500 mt-1">Cross-reference specific contract drawings or prior documentation for legal traceability.</p>
+                        <div className="col-span-2 border-t border-slate-100 pt-4">
+                          <label className="block text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-600"/>Plan Sheets & Related Docs</label>
+                          <input type="text" placeholder="e.g. Sheet S-104, RFI-0042" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/30" value={intakeRelatedDocs} onChange={e => setIntakeRelatedDocs(e.target.value)} />
+                          <p className="text-xs text-slate-500 mt-1">Cross-reference contract drawings for legal traceability.</p>
                         </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Contractor / Sub</label>
-                          <input 
-                            type="text" 
-                            name="contractor" 
-                            required 
-                            placeholder="e.g. Apex Steel Corp" 
-                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={intakeContractor}
-                            onChange={(e) => setIntakeContractor(e.target.value)}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">{termRev}</label>
-                          <input 
-                            type="number" 
-                            name="revision" 
-                            required 
-                            min="0" 
-                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={intakeRevision}
-                            onChange={(e) => setIntakeRevision(Number(e.target.value))}
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Allowable Review Period (Days)</label>
-                          <input 
-                            type="number" 
-                            name="slaDays" 
-                            required 
-                            min="1" 
-                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                            value={intakeSlaDays}
-                            onChange={(e) => setIntakeSlaDays(Number(e.target.value))}
-                          />
-                        </div>
-                        
-                        <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
-                          <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2"><Tag className="w-4 h-4"/> Metadata Tagging</h4>
+                        <div><label className="block text-sm font-medium text-slate-700 mb-1">Contractor / Sub</label><input type="text" name="contractor" required placeholder="e.g. Apex Steel Corp" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeContractor} onChange={e => setIntakeContractor(e.target.value)} /></div>
+                        <div><label className="block text-sm font-medium text-slate-700 mb-1">{termRev}</label><input type="number" name="revision" required min="0" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeRevision} onChange={e => setIntakeRevision(Number(e.target.value))} /></div>
+                        <div><label className="block text-sm font-medium text-slate-700 mb-1">Review Period (Days)</label><input type="number" name="slaDays" required min="1" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeSlaDays} onChange={e => setIntakeSlaDays(Number(e.target.value))} /></div>
+                        <div className="col-span-2 border-t border-slate-100 pt-4">
+                          <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2"><Tag className="w-4 h-4"/>Metadata Tagging</h4>
                           <div className="grid grid-cols-2 gap-6">
-                            <div>
-                              <label className="block text-sm font-medium text-slate-700 mb-1">Components</label>
-                              <input 
-                                type="text" 
-                                placeholder="e.g. Abutment 1, Pier 2, Deck" 
-                                className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
-                                value={intakeComponents}
-                                onChange={(e) => setIntakeComponents(e.target.value)}
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-slate-700 mb-1">Disciplines</label>
-                              <input 
-                                type="text" 
-                                placeholder="e.g. Structural Steel, Rebar" 
-                                className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none" 
-                                value={intakeDisciplines}
-                                onChange={(e) => setIntakeDisciplines(e.target.value)}
-                              />
-                            </div>
+                            <div><label className="block text-sm font-medium text-slate-700 mb-1">Components</label><input type="text" placeholder="e.g. Abutment 1, Pier 2" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={intakeComponents} onChange={e => setIntakeComponents(e.target.value)} /></div>
+                            <div><label className="block text-sm font-medium text-slate-700 mb-1">Disciplines</label><input type="text" placeholder="e.g. Structural Steel, Rebar" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none" value={intakeDisciplines} onChange={e => setIntakeDisciplines(e.target.value)} /></div>
                           </div>
                         </div>
                       </div>
-
-                      {/* Actual File Upload to Firebase Storage */}
-                      <div className="border-t border-slate-100 pt-6 mt-6">
+                      <div className="border-t border-slate-100 pt-6">
                         <label className="block text-sm font-medium text-slate-700 mb-1">Upload Incoming PDF Package</label>
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md bg-slate-50 hover:bg-slate-100 transition-colors relative">
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md bg-slate-50 hover:bg-slate-100">
                           <div className="space-y-1 text-center">
-                            <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
+                            <UploadCloud className="mx-auto h-12 w-12 text-slate-400"/>
                             <div className="flex text-sm text-slate-600 justify-center">
-                              <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                <span>Select a file</span>
-                                <input 
-                                  type="file" 
-                                  className="sr-only" 
-                                  accept="application/pdf"
-                                  onChange={(e) => setIntakeFile(e.target.files[0])}
-                                />
-                              </label>
+                              <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"><span>Select a file</span><input type="file" className="sr-only" accept="application/pdf" onChange={e => setIntakeFile(e.target.files[0])}/></label>
                               <p className="pl-1">or drag and drop</p>
                             </div>
-                            <p className="text-xs text-slate-500 font-bold mt-2">
-                              {intakeFile ? `Selected: ${intakeFile.name}` : 'PDF up to 50MB'}
-                            </p>
+                            <p className="text-xs text-slate-500 font-bold mt-2">{intakeFile ? `Selected: ${intakeFile.name}` : 'PDF up to 50MB'}</p>
                           </div>
                         </div>
                       </div>
-
-                      <div className="border-t border-slate-100 pt-6 mt-6">
+                      <div className="border-t border-slate-100 pt-6">
                         <label className="block text-sm font-medium text-slate-700 mb-1">Initial Assignment</label>
-                        <input 
-                          type="text" 
-                          name="assignedTo"
-                          list="user-list"
-                          placeholder="Select or type a name..."
-                          defaultValue={user?.email || ''}
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
+                        {/* Default to current user's resolved name */}
+                        <input type="text" name="assignedTo" list="user-list" placeholder="Select or type a name..." defaultValue={activeUserRole.name} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                       </div>
-
-                      <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-6">
+                      <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                         <button type="button" onClick={() => setCurrentView('dashboard')} disabled={isUploading} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
                         <button type="submit" disabled={isUploading} className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50">
-                          {isUploading ? <><UploadCloud className="w-4 h-4 animate-bounce"/> {intakeFile ? `Uploading (${uploadProgress}%)...` : 'Processing...'}</> : `Log & Upload ${termModule}`}
+                          {isUploading ? <><UploadCloud className="w-4 h-4 animate-bounce"/>{intakeFile?`Uploading (${uploadProgress}%)...`:'Processing...'}</> : `Log & Upload ${termModule}`}
                         </button>
                       </div>
                     </form>
@@ -1612,131 +883,47 @@
               </div>
             )}
 
-            {/* VIEW: DETAIL & REVIEW */}
+            {/* ── DETAIL ── */}
             {currentView === 'detail' && activeRecordItem && (
               <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* LEFT COLUMN: Properties, Files, Comments */}
                 <div className="lg:col-span-1 space-y-6">
                   <div className="flex items-center justify-between">
-                    <button 
-                      onClick={() => {
-                        setActiveRecordItem(null);
-                        setCurrentView('dashboard');
-                      }}
-                      className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
-                    >
-                      <ArrowLeft className="w-4 h-4" /> Back to List
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteRecord(activeRecordItem.id)}
-                      className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-800 transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md"
-                      title={`Permanently Delete ${termModule}`}
-                    >
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
+                    <button onClick={() => { setActiveRecordItem(null); setCurrentView('dashboard'); }} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800"><ArrowLeft className="w-4 h-4"/> Back to List</button>
+                    <button onClick={() => handleDeleteRecord(activeRecordItem.id)} className="flex items-center gap-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md"><Trash2 className="w-4 h-4"/> Delete</button>
                   </div>
-                  
-                  {/* Properties Card */}
-                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative">
+
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                     {!isEditing ? (
                       <>
                         <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-2">
                           <h3 className="font-bold text-slate-900">Properties</h3>
-                          <button 
-                            onClick={() => {
-                              setEditFormData({
-                                title: activeRecordItem.title,
-                                subtitle: activeRecordItem.subtitle || '',
-                                contractor: activeRecordItem.contractor,
-                                revision: activeRecordItem.revision,
-                                slaDays: activeRecordItem.slaDays,
-                                relatedDocs: activeRecordItem.relatedDocs || ''
-                              });
-                              setIsEditing(true);
-                            }}
-                            className="text-slate-400 hover:text-blue-600 p-1 transition-colors"
-                            title={`Edit ${termModule}`}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => { setEditFormData({ title:activeRecordItem.title, subtitle:activeRecordItem.subtitle||'', contractor:activeRecordItem.contractor, revision:activeRecordItem.revision, slaDays:activeRecordItem.slaDays, relatedDocs:activeRecordItem.relatedDocs||'' }); setIsEditing(true); }} className="text-slate-400 hover:text-blue-600 p-1"><Edit2 className="w-4 h-4"/></button>
                         </div>
                         <dl className="space-y-4 text-sm">
-                          <div>
-                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termModule} ID</dt>
-                            <dd className="font-medium text-slate-900">{activeRecordItem.id} ({termRev} {activeRecordItem.revision})</dd>
-                          </div>
-                          <div>
-                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Logged By</dt>
-                            <dd className="font-medium text-slate-900">{activeRecordItem.loggedBy || 'System Legacy'}</dd>
-                          </div>
-                          {activeRecordItem.subtitle && (
-                            <div>
-                              <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termSubtitle}</dt>
-                              <dd className="font-medium text-slate-900">{activeRecordItem.subtitle}</dd>
-                            </div>
-                          )}
-                          {activeRecordItem.relatedDocs && (
-                            <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                              <dt className="text-blue-600 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/> Plan Sheets & Ref Docs</dt>
-                              <dd className="font-semibold text-slate-900">{activeRecordItem.relatedDocs}</dd>
-                            </div>
-                          )}
-                          <div>
-                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Project</dt>
-                            <dd className="font-medium text-slate-900">{activeRecordItem.projectName}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Contractor</dt>
-                            <dd className="font-medium text-slate-900">{activeRecordItem.contractor}</dd>
-                          </div>
+                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termModule} ID</dt><dd className="font-medium text-slate-900">{activeRecordItem.id} ({termRev} {activeRecordItem.revision})</dd></div>
+                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Logged By</dt><dd className="font-medium text-slate-900">{activeRecordItem.loggedBy||'System Legacy'}</dd></div>
+                          {activeRecordItem.subtitle && <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termSubtitle}</dt><dd className="font-medium text-slate-900">{activeRecordItem.subtitle}</dd></div>}
+                          {activeRecordItem.relatedDocs && <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100"><dt className="text-blue-600 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/>Plan Sheets</dt><dd className="font-semibold text-slate-900">{activeRecordItem.relatedDocs}</dd></div>}
+                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Project</dt><dd className="font-medium text-slate-900">{activeRecordItem.projectName}</dd></div>
+                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Contractor</dt><dd className="font-medium text-slate-900">{activeRecordItem.contractor}</dd></div>
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Date Received</dt>
-                              <dd className="font-medium text-slate-900">{new Date(activeRecordItem.dateReceived).toLocaleDateString()}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">SLA</dt>
-                              <dd className="font-medium text-slate-900">{activeRecordItem.slaDays} Days</dd>
-                            </div>
+                            <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Received</dt><dd className="font-medium text-slate-900">{new Date(activeRecordItem.dateReceived).toLocaleDateString()}</dd></div>
+                            <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">SLA</dt><dd className="font-medium text-slate-900">{activeRecordItem.slaDays} Days</dd></div>
                           </div>
-                          <div>
-                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Calculated Due Date</dt>
-                            <dd className="font-medium text-slate-900">{new Date(activeRecordItem.dueDate).toLocaleDateString()}</dd>
-                          </div>
+                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Due Date</dt><dd className="font-medium text-slate-900">{new Date(activeRecordItem.dueDate).toLocaleDateString()}</dd></div>
                         </dl>
                       </>
                     ) : (
                       <form onSubmit={handleEditSubmit} className="space-y-4">
                         <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Edit Properties</h3>
-                        
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Title</label>
-                          <input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.title} onChange={e => setEditFormData({...editFormData, title: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">{termSubtitle}</label>
-                          <input type="text" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.subtitle} onChange={e => setEditFormData({...editFormData, subtitle: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-blue-600 mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/> Plan Sheets / Refs</label>
-                          <input type="text" className="w-full border border-blue-300 bg-blue-50/50 rounded p-1.5 text-sm" value={editFormData.relatedDocs} onChange={e => setEditFormData({...editFormData, relatedDocs: e.target.value})} />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Contractor</label>
-                          <input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.contractor} onChange={e => setEditFormData({...editFormData, contractor: e.target.value})} />
-                        </div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Title</label><input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.title} onChange={e => setEditFormData({...editFormData, title:e.target.value})} /></div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">{termSubtitle}</label><input type="text" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.subtitle} onChange={e => setEditFormData({...editFormData, subtitle:e.target.value})} /></div>
+                        <div><label className="block text-xs font-medium text-blue-600 mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/>Plan Sheets / Refs</label><input type="text" className="w-full border border-blue-300 bg-blue-50/50 rounded p-1.5 text-sm" value={editFormData.relatedDocs} onChange={e => setEditFormData({...editFormData, relatedDocs:e.target.value})} /></div>
+                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Contractor</label><input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.contractor} onChange={e => setEditFormData({...editFormData, contractor:e.target.value})} /></div>
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">{termRev}</label>
-                            <input type="number" required min="0" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.revision} onChange={e => setEditFormData({...editFormData, revision: e.target.value})} />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">SLA (Days)</label>
-                            <input type="number" required min="1" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.slaDays} onChange={e => setEditFormData({...editFormData, slaDays: e.target.value})} />
-                          </div>
+                          <div><label className="block text-xs font-medium text-slate-500 mb-1">{termRev}</label><input type="number" required min="0" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.revision} onChange={e => setEditFormData({...editFormData, revision:e.target.value})} /></div>
+                          <div><label className="block text-xs font-medium text-slate-500 mb-1">SLA (Days)</label><input type="number" required min="1" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.slaDays} onChange={e => setEditFormData({...editFormData, slaDays:e.target.value})} /></div>
                         </div>
-                        
                         <div className="flex justify-end gap-2 pt-2">
                           <button type="button" onClick={() => setIsEditing(false)} className="px-3 py-1.5 border border-slate-300 rounded text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
                           <button type="submit" className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">Save Changes</button>
@@ -1745,297 +932,160 @@
                     )}
                   </div>
 
-                  {/* Cloud File Links */}
                   <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
                     <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Cloud Files</h3>
                     <div className="space-y-3">
                       {activeRecordItem.incomingPdfRef ? (
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                            <div className="text-sm font-medium text-slate-700 truncate" title={activeRecordItem.incomingFileName}>
-                              {activeRecordItem.incomingFileName || "Incoming Package"}
-                            </div>
-                          </div>
-                          <a href={activeRecordItem.incomingPdfRef} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors">
-                            <Download className="w-4 h-4"/>
-                          </a>
+                          <div className="flex items-center gap-2 overflow-hidden"><FileText className="w-5 h-5 text-blue-500 flex-shrink-0"/><div className="text-sm font-medium text-slate-700 truncate">{activeRecordItem.incomingFileName||'Incoming Package'}</div></div>
+                          <a href={activeRecordItem.incomingPdfRef} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md"><Download className="w-4 h-4"/></a>
                         </div>
-                      ) : (
-                         <p className="text-sm text-slate-500 italic">No incoming file uploaded.</p>
-                      )}
-                      
+                      ) : <p className="text-sm text-slate-500 italic">No incoming file uploaded.</p>}
                       {activeRecordItem.outgoingPdfRef && (
                         <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="flex items-center gap-2 overflow-hidden">
-                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                            <div className="text-sm font-medium text-green-800 truncate" title={activeRecordItem.outgoingFileName}>
-                              {activeRecordItem.outgoingFileName || "Marked Up Final"}
-                            </div>
-                          </div>
-                          <a href={activeRecordItem.outgoingPdfRef} target="_blank" rel="noreferrer" className="text-green-700 hover:text-green-900 bg-green-100 hover:bg-green-200 p-1.5 rounded-md transition-colors">
-                            <Download className="w-4 h-4"/>
-                          </a>
+                          <div className="flex items-center gap-2 overflow-hidden"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0"/><div className="text-sm font-medium text-green-800 truncate">{activeRecordItem.outgoingFileName||'Marked Up Final'}</div></div>
+                          <a href={activeRecordItem.outgoingPdfRef} target="_blank" rel="noreferrer" className="text-green-700 hover:text-green-900 bg-green-100 hover:bg-green-200 p-1.5 rounded-md"><Download className="w-4 h-4"/></a>
                         </div>
                       )}
                     </div>
                   </div>
-                  
-                  {/* Comments Section */}
+
                   <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col h-96">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
-                      <MessageSquare className="w-4 h-4 text-slate-500" />
-                      <h3 className="font-bold text-slate-900">Discussion</h3>
-                    </div>
-                    
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2"><MessageSquare className="w-4 h-4 text-slate-500"/><h3 className="font-bold text-slate-900">Discussion</h3></div>
                     <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                      {(!activeRecordItem.comments || activeRecordItem.comments.length === 0) ? (
-                        <p className="text-sm text-slate-400 text-center italic mt-4">No comments yet. Start the discussion.</p>
-                      ) : (
-                        activeRecordItem.comments.map(comment => (
-                          <div key={comment.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                            <div className="flex justify-between items-start mb-1">
-                              <span className="font-medium text-xs text-slate-800">{comment.user}</span>
-                              <span className="text-[10px] text-slate-400">{new Date(comment.timestamp).toLocaleDateString()} {new Date(comment.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            </div>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{comment.text}</p>
-                          </div>
-                        ))
-                      )}
+                      {(!activeRecordItem.comments || activeRecordItem.comments.length===0) ? (
+                        <p className="text-sm text-slate-400 text-center italic mt-4">No comments yet.</p>
+                      ) : activeRecordItem.comments.map(c => (
+                        <div key={c.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                          <div className="flex justify-between items-start mb-1"><span className="font-medium text-xs text-slate-800">{c.user}</span><span className="text-[10px] text-slate-400">{new Date(c.timestamp).toLocaleDateString()} {new Date(c.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{c.text}</p>
+                        </div>
+                      ))}
                     </div>
-                    
                     <form onSubmit={handleAddComment} className="mt-auto relative">
-                      <textarea 
-                        className="w-full border border-slate-300 rounded-lg p-3 pr-12 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        rows="2"
-                        placeholder="Add a comment or note..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleAddComment(e);
-                          }
-                        }}
-                      ></textarea>
-                      <button 
-                        type="submit"
-                        disabled={!newComment.trim()}
-                        className="absolute right-2 bottom-3 p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
+                      <textarea className="w-full border border-slate-300 rounded-lg p-3 pr-12 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="2" placeholder="Add a comment..." value={newComment} onChange={e => setNewComment(e.target.value)}
+                        onKeyDown={e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleAddComment(e);} }}></textarea>
+                      <button type="submit" disabled={!newComment.trim()} className="absolute right-2 bottom-3 p-1.5 text-blue-600 hover:bg-blue-50 rounded-md disabled:opacity-50"><Send className="w-4 h-4"/></button>
                     </form>
                   </div>
                 </div>
 
-                {/* RIGHT COLUMN: Review Routing */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
                     <div className="flex items-start justify-between mb-6">
-                      <div>
-                        <h2 className="text-2xl font-bold text-slate-900">{activeRecordItem.title}</h2>
-                        <p className="text-slate-500 mt-1">Review interface and routing controls</p>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-sm font-bold border
-                          ${(activeRecordItem.externalStatus || '').includes('Pending') ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                            (activeRecordItem.externalStatus || '').includes('Approved') || activeRecordItem.externalStatus === 'Answered' || activeRecordItem.externalStatus === 'Closed' ? 'bg-green-50 text-green-700 border-green-200' :
-                            'bg-red-50 text-red-700 border-red-200'}
-                        `}
-                      >
-                        Official: {activeRecordItem.externalStatus || 'Pending'}
+                      <div><h2 className="text-2xl font-bold text-slate-900">{activeRecordItem.title}</h2><p className="text-slate-500 mt-1">Review interface and routing controls</p></div>
+                      <div className={`px-3 py-1 rounded-full text-sm font-bold border ${(activeRecordItem.externalStatus||'').includes('Pending')?'bg-amber-50 text-amber-700 border-amber-200':(activeRecordItem.externalStatus||'').includes('Approved')||activeRecordItem.externalStatus==='Answered'||activeRecordItem.externalStatus==='Closed'?'bg-green-50 text-green-700 border-green-200':'bg-red-50 text-red-700 border-red-200'}`}>
+                        Official: {activeRecordItem.externalStatus||'Pending'}
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-6">
-                      
                       <div className="space-y-4">
-                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><UsersIcon className="w-4 h-4"/> Internal Routing</h4>
+                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><UsersIcon className="w-4 h-4"/>Internal Routing</h4>
+                        {/* FIX #2 — controlled inputs; datalist shows team names + current user */}
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Assigned Engineer</label>
-                          <input 
-                            type="text" 
-                            list="user-list"
+                          <input type="text" list="user-list"
                             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
                             placeholder="Select or type a name..."
-                            defaultValue={activeRecordItem.assignedTo || ''}
-                            onBlur={(e) => {
-                              if (e.target.value !== activeRecordItem.assignedTo) {
-                                handleUpdateStatus(activeRecordItem.id, { assignedTo: e.target.value || 'Unassigned' });
-                              }
+                            value={assignedToInput}
+                            onChange={e => setAssignedToInput(e.target.value)}
+                            onBlur={() => {
+                              if (assignedToInput !== activeRecordItem.assignedTo)
+                                handleUpdateStatus(activeRecordItem.id, { assignedTo: assignedToInput || 'Unassigned' });
                             }}
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">QC Reviewer</label>
-                          <input 
-                            type="text" 
-                            list="user-list"
+                          <input type="text" list="user-list"
                             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
                             placeholder="Select or type a reviewer name..."
-                            defaultValue={activeRecordItem.qcReviewer || ''}
-                            onBlur={(e) => {
-                              if (e.target.value !== activeRecordItem.qcReviewer) {
-                                handleUpdateStatus(activeRecordItem.id, { qcReviewer: e.target.value });
-                              }
+                            value={qcReviewerInput}
+                            onChange={e => setQcReviewerInput(e.target.value)}
+                            onBlur={() => {
+                              if (qcReviewerInput !== activeRecordItem.qcReviewer)
+                                handleUpdateStatus(activeRecordItem.id, { qcReviewer: qcReviewerInput });
                             }}
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Internal Status</label>
-                          <select 
-                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
-                            value={activeRecordItem.internalStatus || 'Unassigned'}
-                            onChange={(e) => handleUpdateStatus(activeRecordItem.id, { internalStatus: e.target.value })}
-                          >
+                          <select className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none" value={activeRecordItem.internalStatus||'Unassigned'} onChange={e => handleUpdateStatus(activeRecordItem.id, {internalStatus:e.target.value})}>
                             {INTERNAL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
                       </div>
-
                       <div className="space-y-4">
-                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/> Engineering Decision</h4>
+                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/>Engineering Decision</h4>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Official {termModule} Status</label>
-                          <select 
-                            className="w-full border border-amber-300 bg-amber-50 rounded-md p-2 text-sm focus:ring-amber-500 outline-none font-medium text-amber-900"
-                            value={activeRecordItem.externalStatus || 'Pending'}
-                            onChange={(e) => handleUpdateStatus(activeRecordItem.id, { externalStatus: e.target.value })}
-                          >
+                          <select className="w-full border border-amber-300 bg-amber-50 rounded-md p-2 text-sm focus:ring-amber-500 outline-none font-medium text-amber-900" value={activeRecordItem.externalStatus||'Pending'} onChange={e => handleUpdateStatus(activeRecordItem.id, {externalStatus:e.target.value})}>
                             {STATUSES[activeModule].map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
-                        
-                        {/* Actual Markups File Upload */}
                         <div className="pt-2">
-                           <label className="block text-xs font-medium text-slate-500 mb-1">Upload Redlined Response</label>
-                           <div className="flex items-center gap-2">
-                             <input 
-                               type="file" 
-                               accept="application/pdf"
-                               onChange={(e) => setOutgoingFile(e.target.files[0])}
-                               className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                             />
-                             <button 
-                                onClick={handleUploadOutgoingFile}
-                                disabled={!outgoingFile || isUploading}
-                                className="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-medium hover:bg-slate-900 disabled:opacity-50"
-                             >
-                               {isUploading ? `Uploading (${uploadProgress}%)...` : 'Upload'}
-                             </button>
-                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* VIEW: ANALYTICS DASHBOARD */}
-            {currentView === 'analytics' && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
-                  <div className="bg-slate-800 p-2 rounded-lg">
-                    <BarChart2 className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Project Manager Analytics</h2>
-                    <p className="text-sm text-slate-500">KPIs and Workload Tracking across active <span className="font-bold text-blue-600">{activeModule}</span>.</p>
-                  </div>
-                </div>
-
-                {(() => {
-                  const activeItems = activeRecords.filter(s => s.internalStatus !== 'Sent Out');
-                  const overdueItems = activeItems.filter(s => {
-                    const days = Math.floor((Date.now() - new Date(s.dateReceived).getTime()) / (1000 * 60 * 60 * 24));
-                    return days > (s.slaDays || 14);
-                  });
-                  const totalDays = activeItems.reduce((acc, s) => acc + Math.floor((Date.now() - new Date(s.dateReceived).getTime()) / (1000 * 60 * 60 * 24)), 0);
-                  const avgTurnaround = activeItems.length > 0 ? Math.round(totalDays / activeItems.length) : 0;
-                  const percentOverdue = activeItems.length > 0 ? Math.round((overdueItems.length / activeItems.length) * 100) : 0;
-
-                  // Dynamically group workload by assigned string
-                  const workloadMap = {};
-                  activeItems.forEach(s => {
-                    const assignee = s.assignedTo || 'Unassigned';
-                    workloadMap[assignee] = (workloadMap[assignee] || 0) + 1;
-                  });
-                  const workload = Object.keys(workloadMap).map(name => ({
-                    name,
-                    count: workloadMap[name]
-                  })).sort((a, b) => b.count - a.count);
-
-                  return (
-                    <div className="space-y-8">
-                      {/* KPI Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                          <p className="text-sm font-medium text-slate-500 mb-1">Total Active {termModule}s</p>
-                          <p className="text-3xl font-bold text-slate-900">{activeItems.length}</p>
-                        </div>
-                        <div className="bg-white border border-red-200 rounded-xl p-6 shadow-sm bg-red-50">
-                          <p className="text-sm font-medium text-red-600 mb-1">Currently Overdue</p>
-                          <p className="text-3xl font-bold text-red-700">{overdueItems.length}</p>
-                        </div>
-                        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                          <p className="text-sm font-medium text-slate-500 mb-1">Avg Active Aging (Days)</p>
-                          <p className="text-3xl font-bold text-slate-900">{avgTurnaround}</p>
-                        </div>
-                        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                          <p className="text-sm font-medium text-slate-500 mb-1">% Exceeding SLA</p>
-                          <p className="text-3xl font-bold text-slate-900">{percentOverdue}%</p>
-                        </div>
-                      </div>
-
-                      {/* Workload Distribution */}
-                      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                          <h3 className="font-bold text-slate-800">Engineer Workload Distribution ({activeModule})</h3>
-                        </div>
-                        <div className="p-6">
-                          <div className="space-y-4">
-                            {workload.length === 0 ? (
-                              <p className="text-sm text-slate-500 italic">No active assignments to map.</p>
-                            ) : (
-                              workload.map(user => {
-                                const maxCount = Math.max(...workload.map(w => w.count), 1);
-                                const width = `${(user.count / maxCount) * 100}%`;
-                                return (
-                                  <div key={user.name}>
-                                    <div className="flex justify-between text-sm mb-1">
-                                      <span className="font-medium text-slate-700">{user.name}</span>
-                                      <span className="font-bold text-slate-900">{user.count} items</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 rounded-full h-2.5">
-                                      <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width }}></div>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            )}
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Upload Redlined Response</label>
+                          <div className="flex items-center gap-2">
+                            <input type="file" accept="application/pdf" onChange={e => setOutgoingFile(e.target.files[0])} className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                            <button onClick={handleUploadOutgoingFile} disabled={!outgoingFile||isUploading} className="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-medium hover:bg-slate-900 disabled:opacity-50">
+                              {isUploading ? `Uploading (${uploadProgress}%)...` : 'Upload'}
+                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
-                  );
-                })()}
+                  </div>
+                </div>
               </div>
             )}
+
+            {/* ── ANALYTICS ── */}
+            {currentView === 'analytics' && (() => {
+              const active    = activeRecords.filter(s => s.internalStatus !== 'Sent Out');
+              const overdue   = active.filter(s => Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000) > (s.slaDays||14));
+              const avgAge    = active.length > 0 ? Math.round(active.reduce((acc,s) => acc + Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000), 0) / active.length) : 0;
+              const pctOverdue= active.length > 0 ? Math.round((overdue.length/active.length)*100) : 0;
+              const wMap = {};
+              active.forEach(s => { const a = s.assignedTo||'Unassigned'; wMap[a] = (wMap[a]||0)+1; });
+              const workload  = Object.entries(wMap).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
+              return (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                    <div className="bg-slate-800 p-2 rounded-lg"><BarChart2 className="w-6 h-6 text-white"/></div>
+                    <div><h2 className="text-2xl font-bold text-slate-900">Project Manager Analytics</h2><p className="text-sm text-slate-500">KPIs across active <span className="font-bold text-blue-600">{activeModule}</span>.</p></div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">Total Active</p><p className="text-3xl font-bold text-slate-900">{active.length}</p></div>
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-red-600 mb-1">Overdue</p><p className="text-3xl font-bold text-red-700">{overdue.length}</p></div>
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">Avg Aging (Days)</p><p className="text-3xl font-bold text-slate-900">{avgAge}</p></div>
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">% Exceeding SLA</p><p className="text-3xl font-bold text-slate-900">{pctOverdue}%</p></div>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50"><h3 className="font-bold text-slate-800">Engineer Workload Distribution</h3></div>
+                    <div className="p-6 space-y-4">
+                      {workload.length === 0 ? <p className="text-sm text-slate-500 italic">No active assignments.</p> : workload.map(u => {
+                        const max = Math.max(...workload.map(w=>w.count),1);
+                        return (
+                          <div key={u.name}>
+                            <div className="flex justify-between text-sm mb-1"><span className="font-medium text-slate-700">{u.name}</span><span className="font-bold text-slate-900">{u.count} items</span></div>
+                            <div className="w-full bg-slate-100 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style={{width:`${(u.count/max)*100}%`}}></div></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </main>
 
-          {/* Quick Comment Modal */}
+          {/* QUICK COMMENT MODAL */}
           {quickCommentModal && (
             <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                  <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-blue-600" />
-                    Quick Comment
-                  </h3>
-                  <button onClick={() => setQuickCommentModal(null)} className="text-slate-400 hover:text-slate-600">
-                    <X className="w-5 h-5" />
-                  </button>
+                  <h3 className="font-bold text-slate-900 flex items-center gap-2"><MessageSquare className="w-4 h-4 text-blue-600"/>Quick Comment</h3>
+                  <button onClick={() => setQuickCommentModal(null)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600"/></button>
                 </div>
                 <div className="p-6">
                   <div className="mb-4">
@@ -2043,33 +1093,12 @@
                     <p className="font-medium text-slate-900">{quickCommentModal.title}</p>
                     <p className="text-xs text-slate-500">ID: {quickCommentModal.id} • {termRev} {quickCommentModal.revision}</p>
                   </div>
-                  
                   <form onSubmit={handleQuickCommentSubmit}>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Your Note</label>
-                    <textarea 
-                      autoFocus
-                      className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                      rows="4"
-                      placeholder="Type your comment here..."
-                      value={quickCommentText}
-                      onChange={(e) => setQuickCommentText(e.target.value)}
-                    ></textarea>
-                    
+                    <textarea autoFocus className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="4" placeholder="Type your comment here..." value={quickCommentText} onChange={e => setQuickCommentText(e.target.value)}></textarea>
                     <div className="flex justify-end gap-3 mt-6">
-                      <button 
-                        type="button" 
-                        onClick={() => setQuickCommentModal(null)} 
-                        className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        type="submit" 
-                        disabled={!quickCommentText.trim()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50"
-                      >
-                        Save Comment
-                      </button>
+                      <button type="button" onClick={() => setQuickCommentModal(null)} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
+                      <button type="submit" disabled={!quickCommentText.trim()} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50">Save Comment</button>
                     </div>
                   </form>
                 </div>
@@ -2077,15 +1106,13 @@
             </div>
           )}
 
-          {/* Toast Notification Container */}
+          {/* TOAST */}
           {toast && (
             <div className="fixed bottom-4 right-4 z-50">
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border transition-all duration-300 ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
-                {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type==='error'?'bg-red-50 border-red-200 text-red-800':'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                {toast.type==='error' ? <AlertCircle className="w-5 h-5"/> : <CheckCircle className="w-5 h-5"/>}
                 <p className="text-sm font-medium">{toast.message}</p>
-                <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-600">
-                  <X className="w-4 h-4" />
-                </button>
+                <button onClick={() => setToast(null)}><X className="w-4 h-4 text-slate-400"/></button>
               </div>
             </div>
           )}
