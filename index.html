@@ -869,7 +869,9 @@
                       <div className="border-t border-slate-100 pt-6">
                         <label className="block text-sm font-medium text-slate-700 mb-1">Initial Assignment</label>
                         {/* Default to current user's resolved name */}
-                        <input type="text" name="assignedTo" list="user-list" placeholder="Select or type a name..." defaultValue={activeUserRole.name} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <select name="assignedTo" defaultValue={activeUserRole.name} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                          {allUserOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
                       </div>
                       <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                         <button type="button" onClick={() => setCurrentView('dashboard')} disabled={isUploading} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
@@ -981,32 +983,32 @@
                     <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-6">
                       <div className="space-y-4">
                         <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><UsersIcon className="w-4 h-4"/>Internal Routing</h4>
-                        {/* FIX #2 — controlled inputs; datalist shows team names + current user */}
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Assigned Engineer</label>
-                          <input type="text" list="user-list"
-                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
-                            placeholder="Select or type a name..."
+                          <select
+                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none bg-white"
                             value={assignedToInput}
-                            onChange={e => setAssignedToInput(e.target.value)}
-                            onBlur={() => {
-                              if (assignedToInput !== activeRecordItem.assignedTo)
-                                handleUpdateStatus(activeRecordItem.id, { assignedTo: assignedToInput || 'Unassigned' });
+                            onChange={e => {
+                              setAssignedToInput(e.target.value);
+                              handleUpdateStatus(activeRecordItem.id, { assignedTo: e.target.value || 'Unassigned' });
                             }}
-                          />
+                          >
+                            {allUserOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                          </select>
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">QC Reviewer</label>
-                          <input type="text" list="user-list"
-                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
-                            placeholder="Select or type a reviewer name..."
+                          <select
+                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none bg-white"
                             value={qcReviewerInput}
-                            onChange={e => setQcReviewerInput(e.target.value)}
-                            onBlur={() => {
-                              if (qcReviewerInput !== activeRecordItem.qcReviewer)
-                                handleUpdateStatus(activeRecordItem.id, { qcReviewer: qcReviewerInput });
+                            onChange={e => {
+                              setQcReviewerInput(e.target.value);
+                              handleUpdateStatus(activeRecordItem.id, { qcReviewer: e.target.value });
                             }}
-                          />
+                          >
+                            <option value="">— None —</option>
+                            {allUserOptions.filter(n => n !== 'Unassigned').map(n => <option key={n} value={n}>{n}</option>)}
+                          </select>
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Internal Status</label>
