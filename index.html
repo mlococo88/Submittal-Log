@@ -10,16 +10,18 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 </head>
 <body class="bg-slate-50 antialiased text-slate-800">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     // ============================================================================
     // INLINE SVG ICONS
@@ -40,7 +42,7 @@
     const Clock = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>;
     const AlertCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
     const FilePlus = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></Icon>;
-    const Users = ({className}) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
+    const UsersIcon = ({className}) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
     const Edit2 = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
     const MessageSquare = ({className}) => <Icon className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
     const Send = ({className}) => <Icon className={className}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></Icon>;
@@ -49,6 +51,10 @@
     const BarChart2 = ({className}) => <Icon className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></Icon>;
     const X = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
     const LinkIcon = ({className}) => <Icon className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Icon>;
+    const LogOut = ({className}) => <Icon className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>;
+    const Briefcase = ({className}) => <Icon className={className}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></Icon>;
+    const Trash2 = ({className}) => <Icon className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
+    const UserPlus = ({className}) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></Icon>;
 
     // ============================================================================
     // FIREBASE INITIALIZATION 
@@ -66,29 +72,15 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const storage = firebase.storage();
     if (typeof window !== 'undefined' && firebase.analytics) {
       firebase.analytics();
     }
 
     // ============================================================================
-    // MOCK DATA & CONSTANTS
+    // CONSTANTS
     // ============================================================================
-    const MOCK_PROJECTS = [
-      { id: 'PRJ-101', name: 'I-95 Viaduct Rehabilitation', client: 'State DOT' },
-      { id: 'PRJ-102', name: 'Main St Bridge Replacement', client: 'County Public Works' },
-      { id: 'PRJ-103', name: 'Pedestrian Walkway Structural Steel', client: 'City Parks Dept' }
-    ];
-
-    const MOCK_TEAM = [
-      { id: 'user-sarah', name: 'Sarah Jenkins', role: 'Structural Engineer' },
-      { id: 'user-david', name: 'David Chen', role: 'Bridge Detailer / QA' },
-      { id: 'user-mike', name: 'Mike Rodriguez', role: 'Project Manager' },
-      { id: 'unassigned', name: 'Unassigned', role: 'N/A' }
-    ];
-
     const INTERNAL_STATUSES = ['Unassigned', 'Assigned', 'In Review', 'Ready for PM Approval', 'Sent Out'];
-    
-    // Module-specific statuses
     const STATUSES = {
       submittals: ['Pending', 'Approved', 'Approved as Noted', 'Revise & Resubmit', 'Rejected', 'Information Only'],
       rfis: ['Pending', 'Answered', 'Clarification Requested', 'Closed']
@@ -98,29 +90,44 @@
     // MAIN APPLICATION COMPONENT
     // ============================================================================
     function App() {
+      // Auth State
       const [user, setUser] = useState(null);
       const [authLoading, setAuthLoading] = useState(true);
+      const [authMode, setAuthMode] = useState('login'); 
+      const [authEmail, setAuthEmail] = useState('');
+      const [authPassword, setAuthPassword] = useState('');
 
       // Core Routing & Context State
-      const [activeModule, setActiveModule] = useState('submittals'); // 'submittals' or 'rfis'
-      const [activeUserRole, setActiveUserRole] = useState(MOCK_TEAM[0]); 
-      const [currentView, setCurrentView] = useState('dashboard'); 
+      const [activeModule, setActiveModule] = useState('submittals'); 
+      const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard', 'intake', 'detail', 'analytics', 'projects', 'team'
       const [activeRecordItem, setActiveRecordItem] = useState(null);
       
+      // Data State
       const [activeRecords, setActiveRecords] = useState([]);
+      const [projects, setProjects] = useState([]);
+      const [teamMembers, setTeamMembers] = useState([]); // Explicit user-managed registry
+      
       const [loadingData, setLoadingData] = useState(true);
+      const [isUploading, setIsUploading] = useState(false);
+      const [uploadProgress, setUploadProgress] = useState(0);
 
       const [searchQuery, setSearchQuery] = useState('');
       const [dashboardTab, setDashboardTab] = useState('my-queue'); 
 
-      // Edit Mode State
+      // Edit & Comment States
       const [isEditing, setIsEditing] = useState(false);
       const [editFormData, setEditFormData] = useState({});
-
-      // Comment States
       const [newComment, setNewComment] = useState('');
       const [quickCommentModal, setQuickCommentModal] = useState(null); 
       const [quickCommentText, setQuickCommentText] = useState('');
+
+      // Project Management State
+      const [projForm, setProjForm] = useState({ id: '', name: '', client: '' });
+      const [isEditingProj, setIsEditingProj] = useState(false);
+
+      // Team Management State
+      const [teamForm, setTeamForm] = useState({ id: '', name: '', email: '', role: 'Structural Engineer' });
+      const [isEditingTeam, setIsEditingTeam] = useState(false);
 
       // Intake Form State
       const [intakeProject, setIntakeProject] = useState('');
@@ -133,9 +140,31 @@
       const [intakeSlaDays, setIntakeSlaDays] = useState(14);
       const [intakeComponents, setIntakeComponents] = useState('');
       const [intakeDisciplines, setIntakeDisciplines] = useState('');
-      const [intakeRelatedDocs, setIntakeRelatedDocs] = useState(''); // NEW: Cross-referencing
+      const [intakeRelatedDocs, setIntakeRelatedDocs] = useState(''); 
+      const [intakeFile, setIntakeFile] = useState(null);
 
+      // Redline Upload State
+      const [outgoingFile, setOutgoingFile] = useState(null);
       const [toast, setToast] = useState(null);
+
+      // --------------------------------------------------------------------------
+      // DYNAMIC IDENTITY BINDING
+      // --------------------------------------------------------------------------
+      const activeUserRole = user ? { id: user.uid, name: user.email } : { id: 'guest', name: 'Guest' };
+      
+      // Robust fallback array for the datalist to guarantee options load correctly
+      const allUserOptions = React.useMemo(() => {
+        const options = new Set();
+        options.add('Unassigned');
+        
+        // Always include the active authenticated user
+        if (user && user.email) options.add(user.email);
+        
+        // Add dynamically fetched users from the Firestore registry
+        teamMembers.forEach(member => options.add(member.name));
+        
+        return Array.from(options);
+      }, [user, teamMembers]);
 
       const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -156,14 +185,25 @@
           setIntakeComponents('');
           setIntakeDisciplines('');
           setIntakeRelatedDocs('');
+          setIntakeFile(null);
+          setUploadProgress(0);
         }
         if (currentView !== 'detail') {
           setIsEditing(false);
           setNewComment('');
+          setOutgoingFile(null);
+          setUploadProgress(0);
+        }
+        if (currentView !== 'projects') {
+          setProjForm({ id: '', name: '', client: '' });
+          setIsEditingProj(false);
+        }
+        if (currentView !== 'team') {
+          setTeamForm({ id: '', name: '', email: '', role: 'Structural Engineer' });
+          setIsEditingTeam(false);
         }
       }, [currentView, activeModule]);
 
-      // Auto-populate when revising
       useEffect(() => {
         if (intakeType === 'revision' && intakeBaseId) {
           const baseRec = activeRecords.find(s => s.id === intakeBaseId);
@@ -178,31 +218,50 @@
         }
       }, [intakeType, intakeBaseId, activeRecords]);
 
-      // Auth effect
+      // --------------------------------------------------------------------------
+      // AUTHENTICATION HANDLERS
+      // --------------------------------------------------------------------------
       useEffect(() => {
-        const initAuth = async () => {
-          try {
-            await auth.signInAnonymously();
-          } catch (error) {
-            console.warn("Auth Note: Falling back to unauthenticated mode for Test Mode access.", error);
-          } finally {
-            setAuthLoading(false);
-          }
-        };
-        initAuth();
-        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+        const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
           setUser(currentUser);
           setAuthLoading(false);
         });
         return () => unsubscribe();
       }, []);
 
-      // Dynamic Module Fetch Effect
+      const handleAuthSubmit = async (e) => {
+        e.preventDefault();
+        setAuthLoading(true);
+        try {
+          if (authMode === 'login') {
+            await auth.signInWithEmailAndPassword(authEmail, authPassword);
+            showToast('Logged in successfully');
+          } else {
+            await auth.createUserWithEmailAndPassword(authEmail, authPassword);
+            showToast('Account created successfully');
+          }
+        } catch (error) {
+          console.error("Auth error:", error);
+          showToast(error.message, 'error');
+        } finally {
+          setAuthLoading(false);
+        }
+      };
+
+      const handleLogout = async () => {
+        await auth.signOut();
+        showToast('Logged out');
+      };
+
+      // --------------------------------------------------------------------------
+      // FIRESTORE SYNC (RECORDS, PROJECTS, TEAM)
+      // --------------------------------------------------------------------------
       useEffect(() => {
+        if (!user) return; 
         setLoadingData(true);
-        const colRef = db.collection(activeModule); // Dynamically queries 'submittals' or 'rfis'
         
-        const unsubscribe = colRef.onSnapshot(
+        // Sync Active Module Records
+        const recordsUnsubscribe = db.collection(activeModule).onSnapshot(
           (snapshot) => {
             const fetchedData = snapshot.docs.map(doc => ({
               id: doc.id,
@@ -220,58 +279,264 @@
           (error) => {
             console.error("Firestore sync error:", error);
             setLoadingData(false);
+            if(error.code === 'permission-denied'){
+               showToast('Permission denied. Check Firestore security rules.', 'error');
+            }
           }
         );
 
-        return () => unsubscribe();
-      }, [activeModule, activeRecordItem?.id]);
+        // Sync Projects
+        const projectsUnsubscribe = db.collection('projects').onSnapshot(
+          (snapshot) => {
+             const fetchedProjects = snapshot.docs.map(doc => ({
+               id: doc.id,
+               ...doc.data()
+             }));
+             fetchedProjects.sort((a, b) => a.name.localeCompare(b.name));
+             setProjects(fetchedProjects);
+          },
+          (error) => console.error("Project sync error:", error)
+        );
+
+        // Sync Team Members (Explicitly managed registry)
+        const teamUnsubscribe = db.collection('teamMembers').onSnapshot(
+          (snapshot) => {
+             const fetchedTeam = snapshot.docs.map(doc => ({
+               id: doc.id,
+               ...doc.data()
+             }));
+             fetchedTeam.sort((a, b) => a.name.localeCompare(b.name));
+             setTeamMembers(fetchedTeam);
+          },
+          (error) => console.error("Team sync error:", error)
+        );
+
+        return () => {
+          recordsUnsubscribe();
+          projectsUnsubscribe();
+          teamUnsubscribe();
+        };
+      }, [user, activeModule, activeRecordItem?.id]);
 
       // --------------------------------------------------------------------------
-      // DATA HANDLERS
+      // PROJECT MANAGEMENT HANDLERS
       // --------------------------------------------------------------------------
-      const handleIntakeSubmit = async (formData) => {
+      const handleProjectSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (isEditingProj) {
+                await db.collection('projects').doc(projForm.id).update({
+                    name: projForm.name,
+                    client: projForm.client
+                });
+                showToast('Project updated successfully.');
+            } else {
+                const projId = `PRJ-${Date.now().toString().slice(-4)}`;
+                await db.collection('projects').doc(projId).set({
+                    name: projForm.name,
+                    client: projForm.client,
+                    createdAt: new Date().toISOString()
+                });
+                showToast('Project added successfully.');
+            }
+            setProjForm({ id: '', name: '', client: '' });
+            setIsEditingProj(false);
+        } catch (error) {
+            console.error("Project save error:", error);
+            showToast('Error saving project.', 'error');
+        }
+      };
+
+      const handleDeleteProject = async (id) => {
+         try {
+           await db.collection('projects').doc(id).delete();
+           showToast('Project removed successfully.');
+         } catch(err) {
+           console.error(err);
+           showToast('Failed to remove project.', 'error');
+         }
+      };
+
+      // --------------------------------------------------------------------------
+      // TEAM MANAGEMENT HANDLERS
+      // --------------------------------------------------------------------------
+      const handleTeamSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (isEditingTeam) {
+                await db.collection('teamMembers').doc(teamForm.id).update({
+                    name: teamForm.name,
+                    email: teamForm.email,
+                    role: teamForm.role
+                });
+                showToast('Team member updated successfully.');
+            } else {
+                const teamId = `USR-${Date.now().toString().slice(-4)}`;
+                await db.collection('teamMembers').doc(teamId).set({
+                    name: teamForm.name,
+                    email: teamForm.email,
+                    role: teamForm.role,
+                    createdAt: new Date().toISOString()
+                });
+                showToast('Team member added successfully.');
+            }
+            setTeamForm({ id: '', name: '', email: '', role: 'Structural Engineer' });
+            setIsEditingTeam(false);
+        } catch (error) {
+            console.error("Team save error:", error);
+            showToast('Error saving team member.', 'error');
+        }
+      };
+
+      const handleDeleteTeamMember = async (id) => {
+         try {
+           await db.collection('teamMembers').doc(id).delete();
+           showToast('Team member removed successfully.');
+         } catch(err) {
+           console.error(err);
+           showToast('Failed to remove team member.', 'error');
+         }
+      };
+
+      // --------------------------------------------------------------------------
+      // ADVANCED FILE UPLOAD HELPER
+      // --------------------------------------------------------------------------
+      const uploadFileWithProgress = (file, filePath) => {
+        return new Promise((resolve, reject) => {
+          const storageRef = storage.ref().child(filePath);
+          const uploadTask = storageRef.put(file);
+
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+              setUploadProgress(progress);
+            },
+            (error) => {
+              console.error("Storage Error Detail:", error);
+              if (error.code === 'storage/unauthorized') {
+                showToast("Upload blocked: Verify Storage Security Rules in Console.", "error");
+              }
+              reject(error);
+            },
+            async () => {
+              try {
+                const url = await uploadTask.snapshot.ref.getDownloadURL();
+                resolve(url);
+              } catch(e) {
+                reject(e);
+              }
+            }
+          );
+        });
+      };
+
+      // --------------------------------------------------------------------------
+      // DATA & FILE HANDLERS (SUBMITTALS/RFIS)
+      // --------------------------------------------------------------------------
+      const handleIntakeSubmit = async (e) => {
+        e.preventDefault();
+        if (!user) return;
+
+        setIsUploading(true);
+        setUploadProgress(0);
+        
         const prefix = activeModule === 'submittals' ? 'SUB' : 'RFI';
         const recordId = `${prefix}-${Date.now().toString().slice(-6)}`;
-        const slaDays = Number(formData.slaDays) || 14;
+        const slaDays = Number(intakeSlaDays) || 14;
         
-        const tags = {
-          components: intakeComponents.split(',').map(s => s.trim()).filter(s => s),
-          disciplines: intakeDisciplines.split(',').map(s => s.trim()).filter(s => s)
-        };
-        
-        const newRecord = {
-          projectId: formData.projectId,
-          projectName: MOCK_PROJECTS.find(p => p.id === formData.projectId)?.name || 'Unknown Project',
-          title: formData.title,
-          subtitle: formData.subtitle || '',
-          contractor: formData.contractor,
-          revision: Number(formData.revision),
-          baseSubmittalId: formData.baseSubmittalId || null, 
-          dateReceived: new Date().toISOString(),
-          slaDays: slaDays,
-          dueDate: new Date(Date.now() + slaDays * 24 * 60 * 60 * 1000).toISOString(),
-          assignedTo: formData.assignedTo,
-          internalStatus: formData.assignedTo === 'unassigned' ? 'Unassigned' : 'Assigned',
-          externalStatus: 'Pending',
-          incomingPdfRef: formData.fileName || null, 
-          outgoingPdfRef: null,
-          relatedDocs: intakeRelatedDocs.trim(), // Linkage added here
-          comments: [], 
-          tags: tags,
-          history: [{
-            timestamp: new Date().toISOString(),
-            action: `Ingested ${activeModule.slice(0, -1)}`,
-            user: activeUserRole.name
-          }]
-        };
+        let fileDownloadUrl = null;
 
         try {
+          if (intakeFile) {
+             const fileExt = intakeFile.name.split('.').pop();
+             const filePath = `projects/${intakeProject}/${activeModule}/${recordId}/Incoming_Rev${intakeRevision}.${fileExt}`;
+             
+             showToast(`Initiating connection...`, 'success');
+             fileDownloadUrl = await uploadFileWithProgress(intakeFile, filePath);
+          }
+
+          const tags = {
+            components: intakeComponents.split(',').map(s => s.trim()).filter(s => s),
+            disciplines: intakeDisciplines.split(',').map(s => s.trim()).filter(s => s)
+          };
+          
+          const rawAssignee = e.target.elements.assignedTo.value.trim();
+
+          const newRecord = {
+            projectId: intakeProject,
+            projectName: projects.find(p => p.id === intakeProject)?.name || 'Unknown Project',
+            title: intakeTitle,
+            subtitle: intakeSubtitle || '',
+            contractor: intakeContractor,
+            revision: Number(intakeRevision),
+            baseSubmittalId: intakeBaseId || null, 
+            dateReceived: new Date().toISOString(),
+            slaDays: slaDays,
+            dueDate: new Date(Date.now() + slaDays * 24 * 60 * 60 * 1000).toISOString(),
+            assignedTo: rawAssignee || 'Unassigned',
+            internalStatus: (!rawAssignee || rawAssignee === 'Unassigned') ? 'Unassigned' : 'Assigned',
+            externalStatus: 'Pending',
+            incomingPdfRef: fileDownloadUrl, 
+            incomingFileName: intakeFile ? intakeFile.name : null,
+            outgoingPdfRef: null,
+            outgoingFileName: null,
+            relatedDocs: intakeRelatedDocs.trim(),
+            comments: [], 
+            tags: tags,
+            loggedBy: activeUserRole.name,
+            loggedById: activeUserRole.id,
+            qcReviewer: '',
+            history: [{
+              timestamp: new Date().toISOString(),
+              action: `Ingested ${activeModule.slice(0, -1)}${intakeFile ? ' with attachment' : ''}`,
+              user: activeUserRole.name
+            }]
+          };
+
           await db.collection(activeModule).doc(recordId).set(newRecord);
           showToast(`${activeModule.slice(0, -1)} logged successfully!`);
           setCurrentView('dashboard');
         } catch (error) {
-          console.error("Error creating record:", error);
-          showToast('Error saving record.', 'error');
+          console.error("Error logging record:", error);
+          showToast('Error saving record or file upload failed.', 'error');
+        } finally {
+          setIsUploading(false);
+          setUploadProgress(0);
+        }
+      };
+
+      const handleUploadOutgoingFile = async () => {
+        if (!outgoingFile || !activeRecordItem || !user) return;
+        
+        setIsUploading(true);
+        setUploadProgress(0);
+        try {
+           const fileExt = outgoingFile.name.split('.').pop();
+           const filePath = `projects/${activeRecordItem.projectId}/${activeModule}/${activeRecordItem.id}/Markups_Rev${activeRecordItem.revision}.${fileExt}`;
+           
+           showToast(`Initiating connection...`, 'success');
+           const fileDownloadUrl = await uploadFileWithProgress(outgoingFile, filePath);
+
+           await db.collection(activeModule).doc(activeRecordItem.id).update({
+             outgoingPdfRef: fileDownloadUrl,
+             outgoingFileName: outgoingFile.name,
+             history: [
+               ...(activeRecordItem.history || []), 
+               {
+                 timestamp: new Date().toISOString(),
+                 action: `Uploaded Redlined Response (${outgoingFile.name})`,
+                 user: activeUserRole.name
+               }
+             ]
+           });
+           showToast('Markups uploaded successfully!');
+           setOutgoingFile(null);
+        } catch (error) {
+           console.error("Error uploading markups:", error);
+           showToast("Failed to upload markups.", "error");
+        } finally {
+           setIsUploading(false);
+           setUploadProgress(0);
         }
       };
 
@@ -280,7 +545,7 @@
           await db.collection(activeModule).doc(recordId).update({
             ...updateData,
             history: [
-              ...activeRecordItem.history, 
+              ...(activeRecordItem.history || []), 
               {
                 timestamp: new Date().toISOString(),
                 action: `Updated properties/status`,
@@ -292,6 +557,21 @@
         } catch (error) {
           console.error("Error updating record:", error);
           showToast('Error updating record.', 'error');
+        }
+      };
+
+      const handleDeleteRecord = async (recordId) => {
+        if (!window.confirm(`Are you sure you want to permanently delete this ${termModule}? This action cannot be undone and will remove all metadata from the database.`)) {
+            return;
+        }
+        try {
+            await db.collection(activeModule).doc(recordId).delete();
+            showToast(`${termModule} permanently deleted.`);
+            setActiveRecordItem(null);
+            setCurrentView('dashboard');
+        } catch (error) {
+            console.error("Error deleting record:", error);
+            showToast(`Error deleting ${termModule}. Verify your security permissions.`, 'error');
         }
       };
 
@@ -310,7 +590,7 @@
             dueDate: newDueDate,
             relatedDocs: editFormData.relatedDocs,
             history: [
-              ...activeRecordItem.history, 
+              ...(activeRecordItem.history || []), 
               {
                 timestamp: new Date().toISOString(),
                 action: `Edited Metadata`,
@@ -381,7 +661,11 @@
         const revLabel = activeModule === 'submittals' ? 'Revision' : 'RFI No.';
         const subLabel = activeModule === 'submittals' ? 'Spec Reference' : 'Proposed Solution';
 
-        const headers = [`${moduleLabel} ID`, revLabel, "Title", subLabel, "Project", "Contractor", "Internal Status", "External Status", "Assigned To", "Date Received", "SLA Days", "Due Date", "Component Tags", "Discipline Tags", "Related Plan Sheets"];
+        const headers = [
+          `${moduleLabel} ID`, revLabel, "Title", subLabel, "Project", 
+          "Contractor", "Logged By", "Internal Status", "External Status", "Assigned To", "QC Reviewer", 
+          "Date Received", "SLA Days", "Due Date", "Component Tags", "Discipline Tags", "Related Plan Sheets"
+        ];
         
         const rows = treeRecords.map(sub => [
           sub.id,
@@ -390,9 +674,11 @@
           `"${(sub.subtitle || '').replace(/"/g, '""')}"`,
           `"${sub.projectName.replace(/"/g, '""')}"`,
           `"${sub.contractor.replace(/"/g, '""')}"`,
+          `"${(sub.loggedBy || 'System Legacy').replace(/"/g, '""')}"`,
           sub.internalStatus,
           sub.externalStatus,
-          MOCK_TEAM.find(t => t.id === sub.assignedTo)?.name || 'Unassigned',
+          `"${(sub.assignedTo || 'Unassigned').replace(/"/g, '""')}"`,
+          `"${(sub.qcReviewer || '').replace(/"/g, '""')}"`,
           new Date(sub.dateReceived).toLocaleDateString(),
           sub.slaDays,
           new Date(sub.dueDate).toLocaleDateString(),
@@ -419,7 +705,7 @@
         const matchesSearch = sub.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                               sub.projectName.toLowerCase().includes(searchQuery.toLowerCase());
         if (dashboardTab === 'my-queue') {
-          return matchesSearch && sub.assignedTo === activeUserRole.id && sub.internalStatus !== 'Sent Out';
+          return matchesSearch && sub.assignedTo === activeUserRole.name && sub.internalStatus !== 'Sent Out';
         }
         return matchesSearch;
       });
@@ -449,23 +735,38 @@
         roots.sort((a, b) => getMaxDate(b) - getMaxDate(a));
 
         const flatTree = [];
-        const flatten = (node, level) => {
-          node.indentLevel = level;
-          node.children.sort((a, b) => a.revision - b.revision);
-          flatTree.push(node);
-          node.children.forEach(child => flatten(child, level + 1));
-        };
-
-        roots.forEach(root => flatten(root, 0));
+        roots.forEach(root => {
+          const allItems = [root, ...root.children];
+          allItems.sort((a, b) => a.revision - b.revision);
+          
+          const virtualGroup = {
+            isVirtual: true,
+            id: `GROUP-${root.id}`,
+            title: root.title,
+            projectName: root.projectName,
+            contractor: root.contractor,
+            itemCount: allItems.length,
+            indentLevel: 0
+          };
+          
+          flatTree.push(virtualGroup);
+          
+          allItems.forEach(item => {
+            item.indentLevel = 1;
+            flatTree.push(item);
+          });
+        });
         return flatTree;
       }, [filteredRecords]);
 
-      // Dynamic Module Variables
       const isRfi = activeModule === 'rfis';
       const termModule = isRfi ? 'RFI' : 'Submittal';
       const termRev = isRfi ? 'RFI No.' : 'Revision';
       const termSubtitle = isRfi ? 'Proposed Solution / Reason' : 'Description / Spec Reference';
 
+      // --------------------------------------------------------------------------
+      // RENDER: AUTHENTICATION VIEW
+      // --------------------------------------------------------------------------
       if (authLoading) {
         return (
           <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -477,9 +778,92 @@
         );
       }
 
+      if (!user) {
+        return (
+          <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+              <div className="flex justify-center">
+                <div className="bg-slate-800 p-3 rounded-xl shadow-lg">
+                  <Layers className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
+                Bridge<span className="text-blue-600">Sync</span> Engineering
+              </h2>
+              <p className="mt-2 text-center text-sm text-slate-600">
+                {authMode === 'login' ? 'Sign in to access secure project records' : 'Register a new engineering account'}
+              </p>
+            </div>
+
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+              <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200">
+                <form className="space-y-6" onSubmit={handleAuthSubmit}>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Email address</label>
+                    <div className="mt-1">
+                      <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Password</label>
+                    <div className="mt-1">
+                      <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                      {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                    </button>
+                  </div>
+                </form>
+
+                <div className="mt-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-slate-300" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-slate-500">Or</span>
+                    </div>
+                  </div>
+                  <div className="mt-6 text-center">
+                    <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                      {authMode === 'login' ? 'Need an account? Register here.' : 'Already have an account? Sign in.'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {toast && (
+              <div className="fixed bottom-4 right-4 z-50">
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border transition-all duration-300 ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                  {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                  <p className="text-sm font-medium">{toast.message}</p>
+                  <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      // --------------------------------------------------------------------------
+      // RENDER: MAIN APP VIEW
+      // --------------------------------------------------------------------------
       return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
           
+          {/* Dynamic Datalist for Autocomplete routing */}
+          <datalist id="user-list">
+            {allUserOptions.map(name => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+
           {/* HEADER TOP NAVIGATION */}
           <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -499,13 +883,13 @@
                 <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 ml-4">
                   <button 
                     onClick={() => { setActiveModule('submittals'); setCurrentView('dashboard'); }}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!isRfi ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!isRfi && currentView !== 'projects' && currentView !== 'team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     <Layers className="w-4 h-4" /> Submittals
                   </button>
                   <button 
                     onClick={() => { setActiveModule('rfis'); setCurrentView('dashboard'); }}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${isRfi ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${isRfi && currentView !== 'projects' && currentView !== 'team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     <FileQuestion className="w-4 h-4" /> RFIs
                   </button>
@@ -513,18 +897,20 @@
               </div>
               
               <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1 border border-slate-200">
-                  <Users className="w-4 h-4 text-slate-500 ml-2" />
-                  <select 
-                    className="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer outline-none pr-2"
-                    value={activeUserRole.id}
-                    onChange={(e) => setActiveUserRole(MOCK_TEAM.find(u => u.id === e.target.value))}
-                  >
-                    {MOCK_TEAM.filter(u => u.id !== 'unassigned').map(team => (
-                      <option key={team.id} value={team.id}>Viewing as: {team.name}</option>
-                    ))}
-                  </select>
-                </div>
+                
+                <button 
+                  onClick={() => setCurrentView('projects')}
+                  className={`flex items-center gap-2 hover:bg-slate-100 text-slate-600 px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentView === 'projects' ? 'bg-slate-100 text-blue-600' : ''}`}
+                >
+                  <Briefcase className="w-4 h-4" /> Projects
+                </button>
+
+                <button 
+                  onClick={() => setCurrentView('team')}
+                  className={`flex items-center gap-2 hover:bg-slate-100 text-slate-600 px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentView === 'team' ? 'bg-slate-100 text-blue-600' : ''}`}
+                >
+                  <UsersIcon className="w-4 h-4" /> Team
+                </button>
 
                 <button 
                   onClick={() => setCurrentView('intake')}
@@ -532,18 +918,269 @@
                 >
                   <Plus className="w-4 h-4" /> Log {termModule}
                 </button>
-                <button 
-                  onClick={() => setCurrentView('analytics')}
-                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
-                >
-                  <BarChart2 className="w-4 h-4" /> Analytics
-                </button>
+                
+                {/* User Auth Info & Logout */}
+                <div className="flex items-center gap-3 border-slate-200 pl-4 border-l">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs font-bold text-slate-900">{user.email}</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Authenticated</p>
+                  </div>
+                  <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Sign Out">
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+
               </div>
             </div>
           </header>
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             
+            {/* VIEW: PROJECT ADMINISTRATION */}
+            {currentView === 'projects' && (
+              <div className="space-y-6 max-w-5xl mx-auto">
+                <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                  <div className="bg-slate-800 p-2 rounded-lg">
+                    <Briefcase className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Project Administration</h2>
+                    <p className="text-sm text-slate-500">Manage active bridge contracts and system metadata.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Left Column: Form */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                        {isEditingProj ? 'Edit Project Details' : 'Initialize New Project'}
+                      </h3>
+                      <form onSubmit={handleProjectSubmit} className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Contract / Project Name</label>
+                          <input 
+                            type="text" 
+                            required 
+                            placeholder="e.g. I-95 Viaduct Replacement"
+                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={projForm.name} 
+                            onChange={e => setProjForm({...projForm, name: e.target.value})} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Client / Owner</label>
+                          <input 
+                            type="text" 
+                            required 
+                            placeholder="e.g. State DOT"
+                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={projForm.client} 
+                            onChange={e => setProjForm({...projForm, client: e.target.value})} 
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4">
+                          {isEditingProj && (
+                            <button type="button" onClick={() => { setIsEditingProj(false); setProjForm({id: '', name:'', client:''}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                          )}
+                          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">
+                            {isEditingProj ? 'Update Configuration' : 'Create Project'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Database Table */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                            <th className="p-4 font-semibold">Project Metadata</th>
+                            <th className="p-4 font-semibold">Client Authority</th>
+                            <th className="p-4 font-semibold text-right">Administrative Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {projects.length === 0 ? (
+                            <tr>
+                              <td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">
+                                No projects configured. Initialize a project to begin tracking submittals.
+                              </td>
+                            </tr>
+                          ) : (
+                            projects.map(proj => (
+                              <tr key={proj.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-4">
+                                  <div className="font-bold text-slate-900">{proj.name}</div>
+                                  <div className="text-xs text-slate-500 mt-1 font-mono">System ID: {proj.id}</div>
+                                </td>
+                                <td className="p-4 text-sm font-medium text-slate-700">{proj.client}</td>
+                                <td className="p-4 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button 
+                                      onClick={() => {
+                                        setProjForm({ id: proj.id, name: proj.name, client: proj.client });
+                                        setIsEditingProj(true);
+                                      }}
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                      title="Edit Project"
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        if(window.confirm(`Are you sure you want to permanently remove "${proj.name}"? This action cannot be undone.`)) {
+                                          handleDeleteProject(proj.id);
+                                        }
+                                      }}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                      title="Delete Project"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW: TEAM ADMINISTRATION */}
+            {currentView === 'team' && (
+              <div className="space-y-6 max-w-6xl mx-auto">
+                <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                  <div className="bg-slate-800 p-2 rounded-lg">
+                    <UsersIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Team Management</h2>
+                    <p className="text-sm text-slate-500">Configure personnel for the assignment and routing dropdown menus.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Left Column: Form */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+                        {isEditingTeam ? 'Edit Team Member' : 'Add Team Member'}
+                      </h3>
+                      <form onSubmit={handleTeamSubmit} className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label>
+                          <input 
+                            type="text" 
+                            required 
+                            placeholder="e.g. Sarah Jenkins"
+                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={teamForm.name} 
+                            onChange={e => setTeamForm({...teamForm, name: e.target.value})} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Email Address</label>
+                          <input 
+                            type="email" 
+                            required 
+                            placeholder="e.g. sjenkins@firm.com"
+                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={teamForm.email} 
+                            onChange={e => setTeamForm({...teamForm, email: e.target.value})} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Firm Role / Title</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Structural Engineer"
+                            className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={teamForm.role} 
+                            onChange={e => setTeamForm({...teamForm, role: e.target.value})} 
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4">
+                          {isEditingTeam && (
+                            <button type="button" onClick={() => { setIsEditingTeam(false); setTeamForm({id: '', name:'', email:'', role:'Structural Engineer'}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                          )}
+                          <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">
+                            <UserPlus className="w-4 h-4" />
+                            {isEditingTeam ? 'Update Member' : 'Add to Registry'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Database Table */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                            <th className="p-4 font-semibold">Engineer Identity</th>
+                            <th className="p-4 font-semibold">Contact Info</th>
+                            <th className="p-4 font-semibold text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {teamMembers.length === 0 ? (
+                            <tr>
+                              <td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">
+                                No team members configured. Add personnel to populate routing dropdowns.
+                              </td>
+                            </tr>
+                          ) : (
+                            teamMembers.map(member => (
+                              <tr key={member.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-4">
+                                  <div className="font-bold text-slate-900">{member.name}</div>
+                                  <div className="text-xs text-slate-500 mt-1">{member.role}</div>
+                                </td>
+                                <td className="p-4 text-sm font-medium text-slate-700">{member.email}</td>
+                                <td className="p-4 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button 
+                                      onClick={() => {
+                                        setTeamForm({ id: member.id, name: member.name, email: member.email, role: member.role });
+                                        setIsEditingTeam(true);
+                                      }}
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                      title="Edit Member"
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        if(window.confirm(`Remove "${member.name}" from the routing registry? Active submittals assigned to them will not be deleted.`)) {
+                                          handleDeleteTeamMember(member.id);
+                                        }
+                                      }}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                      title="Remove Member"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* VIEW: DASHBOARD */}
             {currentView === 'dashboard' && (
               <div className="space-y-6">
@@ -561,6 +1198,9 @@
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
+                    <button onClick={() => setCurrentView('analytics')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-sm font-medium shadow-sm transition-colors">
+                      <BarChart2 className="w-4 h-4" /> Analytics
+                    </button>
                     <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors">
                       <Download className="w-4 h-4" /> Export CSV
                     </button>
@@ -572,7 +1212,7 @@
                     className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab === 'my-queue' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
                     onClick={() => setDashboardTab('my-queue')}
                   >
-                    My Queue ({activeRecords.filter(s => s.assignedTo === activeUserRole.id && s.internalStatus !== 'Sent Out').length})
+                    My Queue ({activeRecords.filter(s => s.assignedTo === activeUserRole.name && s.internalStatus !== 'Sent Out').length})
                   </button>
                   <button 
                     className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
@@ -606,9 +1246,26 @@
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {treeRecords.map(sub => {
+                            if (sub.isVirtual) {
+                              return (
+                                <tr key={sub.id} className="bg-slate-200/50 border-t-2 border-slate-300">
+                                  <td className="p-3 pl-4">
+                                    <div className="font-extrabold text-slate-900">{sub.title}</div>
+                                    <div className="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">{termModule} Thread • {sub.itemCount} Record{sub.itemCount > 1 ? 's' : ''}</div>
+                                  </td>
+                                  <td className="p-3">
+                                    <div className="text-sm font-bold text-slate-800">{sub.projectName}</div>
+                                    <div className="text-xs text-slate-600">{sub.contractor}</div>
+                                  </td>
+                                  <td className="p-3" colSpan="4"></td>
+                                </tr>
+                              );
+                            }
+
                             const msElapsed = Date.now() - new Date(sub.dateReceived).getTime();
                             const daysElapsed = Math.floor(msElapsed / (1000 * 60 * 60 * 24));
-                            const isLate = daysElapsed > (sub.slaDays || 14);
+                            const daysRemaining = (sub.slaDays || 14) - daysElapsed;
+                            const isLate = daysRemaining < 0;
 
                             return (
                               <tr key={sub.id} className="hover:bg-slate-50 transition-colors group">
@@ -641,6 +1298,7 @@
                                           ))}
                                         </div>
                                       )}
+                                      <div className="text-[10px] text-slate-400 mt-1.5 font-medium">Logged by: {sub.loggedBy || 'System Legacy'}</div>
                                     </div>
                                   </div>
                                 </td>
@@ -665,16 +1323,21 @@
                                     {sub.internalStatus}
                                   </span>
                                   <div className="flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                      {MOCK_TEAM.find(t => t.id === sub.assignedTo)?.name.charAt(0) || '?'}
+                                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 flex-shrink-0">
+                                      {(sub.assignedTo || 'U').charAt(0).toUpperCase()}
                                     </div>
-                                    <span className="text-xs text-slate-700">{MOCK_TEAM.find(t => t.id === sub.assignedTo)?.name || 'Unassigned'}</span>
+                                    <span className="text-xs text-slate-700 truncate max-w-[120px]" title={sub.assignedTo || 'Unassigned'}>
+                                      {sub.assignedTo || 'Unassigned'}
+                                    </span>
                                   </div>
                                 </td>
                                 <td className="p-4">
                                   <div className={`flex items-center gap-1.5 text-sm font-medium ${isLate ? 'text-red-600' : 'text-slate-600'}`}>
                                     <Clock className="w-4 h-4" />
-                                    {daysElapsed} Days
+                                    {daysElapsed} d Elapsed
+                                  </div>
+                                  <div className={`text-xs mt-1 font-semibold ${isLate ? 'text-red-500' : daysRemaining <= 3 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                                    {isLate ? `${Math.abs(daysRemaining)} d Overdue` : `${daysRemaining} d Remaining`}
                                   </div>
                                 </td>
                                 <td className="p-4 text-right">
@@ -719,6 +1382,7 @@
                 <button 
                   onClick={() => setCurrentView('dashboard')}
                   className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6 transition-colors"
+                  disabled={isUploading}
                 >
                   <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                 </button>
@@ -730,206 +1394,220 @@
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-slate-900">Ingest {termModule}</h2>
-                      <p className="text-sm text-slate-500">Log an incoming {activeModule.slice(0, -1)} package from a contractor</p>
+                      <p className="text-sm text-slate-500">Log and upload an incoming {activeModule.slice(0, -1)} package from a contractor.</p>
                     </div>
                   </div>
 
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const fd = new FormData(e.target);
-                    handleIntakeSubmit(Object.fromEntries(fd));
-                  }} className="space-y-6">
-                    
-                    <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
-                      <button 
-                        type="button"
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'new' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                        onClick={() => { setIntakeType('new'); setIntakeBaseId(''); setIntakeTitle(''); setIntakeContractor(''); setIntakeRevision(0); }}
-                      >
-                        New {termModule}
-                      </button>
-                      <button 
-                        type="button"
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'revision' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                        onClick={() => setIntakeType('revision')}
-                      >
-                        Revision to Existing
-                      </button>
+                  {projects.length === 0 ? (
+                    <div className="p-8 text-center border-2 border-dashed border-amber-200 rounded-xl bg-amber-50">
+                      <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+                      <h3 className="font-bold text-amber-800 mb-1">Configuration Required</h3>
+                      <p className="text-sm text-amber-700 mb-4">You must initialize at least one active Project before logging submittals or RFIs.</p>
+                      <button onClick={() => setCurrentView('projects')} className="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium hover:bg-amber-700">Go to Project Administration</button>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
-                        <select 
-                          name="projectId" 
-                          required 
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                          value={intakeProject}
-                          onChange={(e) => { setIntakeProject(e.target.value); setIntakeBaseId(''); }}
+                  ) : (
+                    <form onSubmit={handleIntakeSubmit} className="space-y-6">
+                      
+                      <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
+                        <button 
+                          type="button"
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'new' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                          onClick={() => { setIntakeType('new'); setIntakeBaseId(''); setIntakeTitle(''); setIntakeContractor(''); setIntakeRevision(0); }}
                         >
-                          <option value="">Select a project...</option>
-                          {MOCK_PROJECTS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
+                          New {termModule}
+                        </button>
+                        <button 
+                          type="button"
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'revision' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                          onClick={() => setIntakeType('revision')}
+                        >
+                          Revision to Existing
+                        </button>
                       </div>
 
-                      {intakeType === 'revision' && (
+                      <div className="grid grid-cols-2 gap-6">
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-slate-700 mb-1">Select Existing Base {termModule}</label>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Project Alignment</label>
                           <select 
-                            name="baseSubmittalId"
-                            required={intakeType === 'revision'}
+                            name="projectId" 
+                            required 
                             className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                            value={intakeBaseId}
-                            onChange={(e) => setIntakeBaseId(e.target.value)}
-                            disabled={!intakeProject}
+                            value={intakeProject}
+                            onChange={(e) => { setIntakeProject(e.target.value); setIntakeBaseId(''); }}
                           >
-                            <option value="">{intakeProject ? `Select a ${termModule} to revise...` : 'Select a project first...'}</option>
-                            {activeRecords
-                              .filter(s => s.projectId === intakeProject)
-                              .map(s => <option key={s.id} value={s.id}>{s.id} - {termRev} {s.revision}: {s.title}</option>)
-                            }
+                            <option value="">Select a project...</option>
+                            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                           </select>
                         </div>
-                      )}
 
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{isRfi ? 'RFI Question / Title' : 'Submittal Title'}</label>
-                        <input 
-                          type="text" 
-                          name="title" 
-                          required 
-                          placeholder={isRfi ? "e.g. Discrepancy at Pier 2 Elevation" : "e.g. Abutment 1 Concrete Mix Design"}
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                          value={intakeTitle}
-                          onChange={(e) => setIntakeTitle(e.target.value)}
-                        />
-                      </div>
-
-                      <div className="col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{termSubtitle}</label>
-                        <input 
-                          type="text" 
-                          name="subtitle" 
-                          placeholder={isRfi ? "e.g. Contractor proposes field welding." : "e.g. Spec Section 550 - Structural Steel Details"}
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                          value={intakeSubtitle}
-                          onChange={(e) => setIntakeSubtitle(e.target.value)}
-                        />
-                      </div>
-                      
-                      <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
-                        <label className="block text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-600"/> Plan Sheets & Related Docs</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Sheet S-104, RFI-0042, Standard Det. 14A" 
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/30" 
-                          value={intakeRelatedDocs}
-                          onChange={(e) => setIntakeRelatedDocs(e.target.value)}
-                        />
-                        <p className="text-xs text-slate-500 mt-1">Cross-reference specific contract drawings or prior documentation for legal traceability.</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Contractor / Sub</label>
-                        <input 
-                          type="text" 
-                          name="contractor" 
-                          required 
-                          placeholder="e.g. Apex Steel Corp" 
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                          value={intakeContractor}
-                          onChange={(e) => setIntakeContractor(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">{termRev}</label>
-                        <input 
-                          type="number" 
-                          name="revision" 
-                          required 
-                          min="0" 
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                          value={intakeRevision}
-                          onChange={(e) => setIntakeRevision(Number(e.target.value))}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Allowable Review Period (Days)</label>
-                        <input 
-                          type="number" 
-                          name="slaDays" 
-                          required 
-                          min="1" 
-                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
-                          value={intakeSlaDays}
-                          onChange={(e) => setIntakeSlaDays(Number(e.target.value))}
-                        />
-                      </div>
-                      
-                      <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
-                        <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2"><Tag className="w-4 h-4"/> Metadata Tagging</h4>
-                        <div className="grid grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Components</label>
-                            <input 
-                              type="text" 
-                              placeholder="e.g. Abutment 1, Pier 2, Deck" 
-                              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
-                              value={intakeComponents}
-                              onChange={(e) => setIntakeComponents(e.target.value)}
-                            />
+                        {intakeType === 'revision' && (
+                          <div className="col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Select Existing Base {termModule}</label>
+                            <select 
+                              name="baseSubmittalId"
+                              required={intakeType === 'revision'}
+                              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                              value={intakeBaseId}
+                              onChange={(e) => setIntakeBaseId(e.target.value)}
+                              disabled={!intakeProject}
+                            >
+                              <option value="">{intakeProject ? `Select a ${termModule} to revise...` : 'Select a project first...'}</option>
+                              {activeRecords
+                                .filter(s => s.projectId === intakeProject)
+                                .map(s => <option key={s.id} value={s.id}>{s.id} - {termRev} {s.revision}: {s.title}</option>)
+                              }
+                            </select>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Disciplines</label>
-                            <input 
-                              type="text" 
-                              placeholder="e.g. Structural Steel, Rebar" 
-                              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none" 
-                              value={intakeDisciplines}
-                              onChange={(e) => setIntakeDisciplines(e.target.value)}
-                            />
+                        )}
+
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">{isRfi ? 'RFI Question / Title' : 'Submittal Title'}</label>
+                          <input 
+                            type="text" 
+                            name="title" 
+                            required 
+                            placeholder={isRfi ? "e.g. Discrepancy at Pier 2 Elevation" : "e.g. Abutment 1 Concrete Mix Design"}
+                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={intakeTitle}
+                            onChange={(e) => setIntakeTitle(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">{termSubtitle}</label>
+                          <input 
+                            type="text" 
+                            name="subtitle" 
+                            placeholder={isRfi ? "e.g. Contractor proposes field welding." : "e.g. Spec Section 550 - Structural Steel Details"}
+                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={intakeSubtitle}
+                            onChange={(e) => setIntakeSubtitle(e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
+                          <label className="block text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-600"/> Plan Sheets & Related Docs</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Sheet S-104, RFI-0042, Standard Det. 14A" 
+                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/30" 
+                            value={intakeRelatedDocs}
+                            onChange={(e) => setIntakeRelatedDocs(e.target.value)}
+                          />
+                          <p className="text-xs text-slate-500 mt-1">Cross-reference specific contract drawings or prior documentation for legal traceability.</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Contractor / Sub</label>
+                          <input 
+                            type="text" 
+                            name="contractor" 
+                            required 
+                            placeholder="e.g. Apex Steel Corp" 
+                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={intakeContractor}
+                            onChange={(e) => setIntakeContractor(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">{termRev}</label>
+                          <input 
+                            type="number" 
+                            name="revision" 
+                            required 
+                            min="0" 
+                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={intakeRevision}
+                            onChange={(e) => setIntakeRevision(Number(e.target.value))}
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Allowable Review Period (Days)</label>
+                          <input 
+                            type="number" 
+                            name="slaDays" 
+                            required 
+                            min="1" 
+                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                            value={intakeSlaDays}
+                            onChange={(e) => setIntakeSlaDays(Number(e.target.value))}
+                          />
+                        </div>
+                        
+                        <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
+                          <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2"><Tag className="w-4 h-4"/> Metadata Tagging</h4>
+                          <div className="grid grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">Components</label>
+                              <input 
+                                type="text" 
+                                placeholder="e.g. Abutment 1, Pier 2, Deck" 
+                                className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                                value={intakeComponents}
+                                onChange={(e) => setIntakeComponents(e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">Disciplines</label>
+                              <input 
+                                type="text" 
+                                placeholder="e.g. Structural Steel, Rebar" 
+                                className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none" 
+                                value={intakeDisciplines}
+                                onChange={(e) => setIntakeDisciplines(e.target.value)}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="border-t border-slate-100 pt-6 mt-6">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Upload Incoming PDF Package</label>
-                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer relative">
-                        <div className="space-y-1 text-center">
-                          <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
-                          <div className="flex text-sm text-slate-600 justify-center">
-                            <span className="relative rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                              <span>Select a file</span>
-                              <input type="file" className="sr-only" onChange={(e) => {
-                                if(e.target.files[0]) {
-                                  document.getElementById('file-name-display').innerText = e.target.files[0].name;
-                                  document.getElementById('hidden-file-name').value = e.target.files[0].name;
-                                }
-                              }}/>
-                            </span>
-                            <p className="pl-1">or drag and drop</p>
+                      {/* Actual File Upload to Firebase Storage */}
+                      <div className="border-t border-slate-100 pt-6 mt-6">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Upload Incoming PDF Package</label>
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md bg-slate-50 hover:bg-slate-100 transition-colors relative">
+                          <div className="space-y-1 text-center">
+                            <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
+                            <div className="flex text-sm text-slate-600 justify-center">
+                              <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                <span>Select a file</span>
+                                <input 
+                                  type="file" 
+                                  className="sr-only" 
+                                  accept="application/pdf"
+                                  onChange={(e) => setIntakeFile(e.target.files[0])}
+                                />
+                              </label>
+                              <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs text-slate-500 font-bold mt-2">
+                              {intakeFile ? `Selected: ${intakeFile.name}` : 'PDF up to 50MB'}
+                            </p>
                           </div>
-                          <p className="text-xs text-slate-500" id="file-name-display">PDF up to 50MB</p>
-                          <input type="hidden" name="fileName" id="hidden-file-name" value="" />
                         </div>
                       </div>
-                    </div>
 
-                    <div className="border-t border-slate-100 pt-6 mt-6">
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Initial Assignment</label>
-                      <select name="assignedTo" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                        {MOCK_TEAM.map(p => <option key={p.id} value={p.id}>{p.name} ({p.role})</option>)}
-                      </select>
-                    </div>
+                      <div className="border-t border-slate-100 pt-6 mt-6">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Initial Assignment</label>
+                        <input 
+                          type="text" 
+                          name="assignedTo"
+                          list="user-list"
+                          placeholder="Select or type a name..."
+                          defaultValue={user?.email || ''}
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
 
-                    <div className="flex justify-end gap-3 pt-4">
-                      <button type="button" onClick={() => setCurrentView('dashboard')} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
-                      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">Log & Route {termModule}</button>
-                    </div>
-                  </form>
+                      <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-6">
+                        <button type="button" onClick={() => setCurrentView('dashboard')} disabled={isUploading} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+                        <button type="submit" disabled={isUploading} className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50">
+                          {isUploading ? <><UploadCloud className="w-4 h-4 animate-bounce"/> {intakeFile ? `Uploading (${uploadProgress}%)...` : 'Processing...'}</> : `Log & Upload ${termModule}`}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
               </div>
             )}
@@ -940,17 +1618,26 @@
                 
                 {/* LEFT COLUMN: Properties, Files, Comments */}
                 <div className="lg:col-span-1 space-y-6">
-                  <button 
-                    onClick={() => {
-                      setActiveRecordItem(null);
-                      setCurrentView('dashboard');
-                    }}
-                    className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4" /> Back to List
-                  </button>
+                  <div className="flex items-center justify-between">
+                    <button 
+                      onClick={() => {
+                        setActiveRecordItem(null);
+                        setCurrentView('dashboard');
+                      }}
+                      className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Back to List
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteRecord(activeRecordItem.id)}
+                      className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-800 transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md"
+                      title={`Permanently Delete ${termModule}`}
+                    >
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                  </div>
                   
-                  {/* Properties Card (with Edit logic) */}
+                  {/* Properties Card */}
                   <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative">
                     {!isEditing ? (
                       <>
@@ -978,6 +1665,10 @@
                           <div>
                             <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termModule} ID</dt>
                             <dd className="font-medium text-slate-900">{activeRecordItem.id} ({termRev} {activeRecordItem.revision})</dd>
+                          </div>
+                          <div>
+                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Logged By</dt>
+                            <dd className="font-medium text-slate-900">{activeRecordItem.loggedBy || 'System Legacy'}</dd>
                           </div>
                           {activeRecordItem.subtitle && (
                             <div>
@@ -1054,24 +1745,37 @@
                     )}
                   </div>
 
+                  {/* Cloud File Links */}
                   <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                    <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Files</h3>
+                    <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Cloud Files</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-5 h-5 text-slate-400" />
-                          <div className="text-sm font-medium text-slate-700 truncate max-w-[150px]">Incoming Package</div>
+                      {activeRecordItem.incomingPdfRef ? (
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                            <div className="text-sm font-medium text-slate-700 truncate" title={activeRecordItem.incomingFileName}>
+                              {activeRecordItem.incomingFileName || "Incoming Package"}
+                            </div>
+                          </div>
+                          <a href={activeRecordItem.incomingPdfRef} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors">
+                            <Download className="w-4 h-4"/>
+                          </a>
                         </div>
-                        <button className="text-blue-600 hover:text-blue-800 bg-blue-50 p-1.5 rounded-md"><Download className="w-4 h-4"/></button>
-                      </div>
+                      ) : (
+                         <p className="text-sm text-slate-500 italic">No incoming file uploaded.</p>
+                      )}
                       
                       {activeRecordItem.outgoingPdfRef && (
                         <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                            <div className="text-sm font-medium text-green-800 truncate max-w-[150px]">Marked Up Final</div>
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            <div className="text-sm font-medium text-green-800 truncate" title={activeRecordItem.outgoingFileName}>
+                              {activeRecordItem.outgoingFileName || "Marked Up Final"}
+                            </div>
                           </div>
-                          <button className="text-green-700 hover:text-green-900 bg-green-100 p-1.5 rounded-md"><Download className="w-4 h-4"/></button>
+                          <a href={activeRecordItem.outgoingPdfRef} target="_blank" rel="noreferrer" className="text-green-700 hover:text-green-900 bg-green-100 hover:bg-green-200 p-1.5 rounded-md transition-colors">
+                            <Download className="w-4 h-4"/>
+                          </a>
                         </div>
                       )}
                     </div>
@@ -1134,34 +1838,54 @@
                         <p className="text-slate-500 mt-1">Review interface and routing controls</p>
                       </div>
                       <div className={`px-3 py-1 rounded-full text-sm font-bold border
-                          ${activeRecordItem.externalStatus === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                            activeRecordItem.externalStatus.includes('Approved') || activeRecordItem.externalStatus === 'Answered' || activeRecordItem.externalStatus === 'Closed' ? 'bg-green-50 text-green-700 border-green-200' :
+                          ${(activeRecordItem.externalStatus || '').includes('Pending') ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                            (activeRecordItem.externalStatus || '').includes('Approved') || activeRecordItem.externalStatus === 'Answered' || activeRecordItem.externalStatus === 'Closed' ? 'bg-green-50 text-green-700 border-green-200' :
                             'bg-red-50 text-red-700 border-red-200'}
                         `}
                       >
-                        Official: {activeRecordItem.externalStatus}
+                        Official: {activeRecordItem.externalStatus || 'Pending'}
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-6">
                       
                       <div className="space-y-4">
-                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><Users className="w-4 h-4"/> Internal Routing</h4>
+                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><UsersIcon className="w-4 h-4"/> Internal Routing</h4>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Assigned Engineer</label>
-                          <select 
+                          <input 
+                            type="text" 
+                            list="user-list"
                             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
-                            value={activeRecordItem.assignedTo}
-                            onChange={(e) => handleUpdateStatus(activeRecordItem.id, { assignedTo: e.target.value })}
-                          >
-                            {MOCK_TEAM.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                          </select>
+                            placeholder="Select or type a name..."
+                            defaultValue={activeRecordItem.assignedTo || ''}
+                            onBlur={(e) => {
+                              if (e.target.value !== activeRecordItem.assignedTo) {
+                                handleUpdateStatus(activeRecordItem.id, { assignedTo: e.target.value || 'Unassigned' });
+                              }
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">QC Reviewer</label>
+                          <input 
+                            type="text" 
+                            list="user-list"
+                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
+                            placeholder="Select or type a reviewer name..."
+                            defaultValue={activeRecordItem.qcReviewer || ''}
+                            onBlur={(e) => {
+                              if (e.target.value !== activeRecordItem.qcReviewer) {
+                                handleUpdateStatus(activeRecordItem.id, { qcReviewer: e.target.value });
+                              }
+                            }}
+                          />
                         </div>
                         <div>
                           <label className="block text-xs font-medium text-slate-500 mb-1">Internal Status</label>
                           <select 
                             className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
-                            value={activeRecordItem.internalStatus}
+                            value={activeRecordItem.internalStatus || 'Unassigned'}
                             onChange={(e) => handleUpdateStatus(activeRecordItem.id, { internalStatus: e.target.value })}
                           >
                             {INTERNAL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -1175,46 +1899,34 @@
                           <label className="block text-xs font-medium text-slate-500 mb-1">Official {termModule} Status</label>
                           <select 
                             className="w-full border border-amber-300 bg-amber-50 rounded-md p-2 text-sm focus:ring-amber-500 outline-none font-medium text-amber-900"
-                            value={activeRecordItem.externalStatus}
+                            value={activeRecordItem.externalStatus || 'Pending'}
                             onChange={(e) => handleUpdateStatus(activeRecordItem.id, { externalStatus: e.target.value })}
                           >
                             {STATUSES[activeModule].map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
                         
+                        {/* Actual Markups File Upload */}
                         <div className="pt-2">
                            <label className="block text-xs font-medium text-slate-500 mb-1">Upload Redlined Response</label>
-                           <button 
-                              className="w-full border border-slate-300 border-dashed bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md p-2 text-sm flex items-center justify-center gap-2 transition-colors"
-                              onClick={() => {
-                                handleUpdateStatus(activeRecordItem.id, { outgoingPdfRef: 'final-response-v1.pdf' });
-                                showToast("Simulated upload of response document successful.");
-                              }}
-                           >
-                             <UploadCloud className="w-4 h-4"/> Upload Marked-Up File
-                           </button>
+                           <div className="flex items-center gap-2">
+                             <input 
+                               type="file" 
+                               accept="application/pdf"
+                               onChange={(e) => setOutgoingFile(e.target.files[0])}
+                               className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                             />
+                             <button 
+                                onClick={handleUploadOutgoingFile}
+                                disabled={!outgoingFile || isUploading}
+                                className="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-medium hover:bg-slate-900 disabled:opacity-50"
+                             >
+                               {isUploading ? `Uploading (${uploadProgress}%)...` : 'Upload'}
+                             </button>
+                           </div>
                         </div>
                       </div>
                     </div>
-
-                    <div className="border-t border-slate-100 pt-6 mt-8">
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center justify-between">
-                        <div>
-                          <h4 className="font-semibold text-slate-800 text-sm">Generate Transmittal</h4>
-                          <p className="text-xs text-slate-500">Create the formal PDF cover sheet to email the contractor.</p>
-                        </div>
-                        <button 
-                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition-colors
-                            ${activeRecordItem.externalStatus === 'Pending' ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}
-                          `}
-                          disabled={activeRecordItem.externalStatus === 'Pending'}
-                          onClick={() => showToast("Transmittal PDF compilation process initiated.", "success")}
-                        >
-                          <FileText className="w-4 h-4" /> Create Cover Sheet
-                        </button>
-                      </div>
-                    </div>
-
                   </div>
                 </div>
               </div>
@@ -1243,9 +1955,15 @@
                   const avgTurnaround = activeItems.length > 0 ? Math.round(totalDays / activeItems.length) : 0;
                   const percentOverdue = activeItems.length > 0 ? Math.round((overdueItems.length / activeItems.length) * 100) : 0;
 
-                  const workload = MOCK_TEAM.map(team => ({
-                    ...team,
-                    count: activeItems.filter(s => s.assignedTo === team.id).length
+                  // Dynamically group workload by assigned string
+                  const workloadMap = {};
+                  activeItems.forEach(s => {
+                    const assignee = s.assignedTo || 'Unassigned';
+                    workloadMap[assignee] = (workloadMap[assignee] || 0) + 1;
+                  });
+                  const workload = Object.keys(workloadMap).map(name => ({
+                    name,
+                    count: workloadMap[name]
                   })).sort((a, b) => b.count - a.count);
 
                   return (
@@ -1277,21 +1995,25 @@
                         </div>
                         <div className="p-6">
                           <div className="space-y-4">
-                            {workload.map(user => {
-                              const maxCount = Math.max(...workload.map(w => w.count), 1);
-                              const width = `${(user.count / maxCount) * 100}%`;
-                              return (
-                                <div key={user.id}>
-                                  <div className="flex justify-between text-sm mb-1">
-                                    <span className="font-medium text-slate-700">{user.name}</span>
-                                    <span className="font-bold text-slate-900">{user.count} items</span>
+                            {workload.length === 0 ? (
+                              <p className="text-sm text-slate-500 italic">No active assignments to map.</p>
+                            ) : (
+                              workload.map(user => {
+                                const maxCount = Math.max(...workload.map(w => w.count), 1);
+                                const width = `${(user.count / maxCount) * 100}%`;
+                                return (
+                                  <div key={user.name}>
+                                    <div className="flex justify-between text-sm mb-1">
+                                      <span className="font-medium text-slate-700">{user.name}</span>
+                                      <span className="font-bold text-slate-900">{user.count} items</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                      <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width }}></div>
+                                    </div>
                                   </div>
-                                  <div className="w-full bg-slate-100 rounded-full h-2.5">
-                                    <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width }}></div>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })
+                            )}
                           </div>
                         </div>
                       </div>
