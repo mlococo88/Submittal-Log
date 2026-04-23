@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bridge Submittal & RFI Tracker</title>
+  <title>BridgeSync Engineering Hub</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -12,1118 +12,891 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-storage-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 </head>
 <body class="bg-slate-50 antialiased text-slate-800">
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo } = React;
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
 
-    // ── Icons ────────────────────────────────────────────────────────────────────
-    const Icon = ({ children, className }) => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
-    );
-    const FileText     = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></Icon>;
-    const FileQuestion = ({className}) => <Icon className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 10.3c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.4.5.8.5 1.3 0 1.3-2 2-2 2"/><circle cx="12" cy="17" r="1"/></Icon>;
-    const Layers       = ({className}) => <Icon className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>;
-    const Plus         = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
-    const Search       = ({className}) => <Icon className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>;
-    const ArrowLeft    = ({className}) => <Icon className={className}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></Icon>;
-    const Download     = ({className}) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
-    const UploadCloud  = ({className}) => <Icon className={className}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></Icon>;
-    const CheckCircle  = ({className}) => <Icon className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
-    const Clock        = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>;
-    const AlertCircle  = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
-    const FilePlus     = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></Icon>;
-    const UsersIcon    = ({className}) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
-    const Edit2        = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
-    const MessageSquare= ({className}) => <Icon className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
-    const Send         = ({className}) => <Icon className={className}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></Icon>;
-    const CornerDownRight=({className})=> <Icon className={className}><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></Icon>;
-    const Tag          = ({className}) => <Icon className={className}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></Icon>;
-    const BarChart2    = ({className}) => <Icon className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></Icon>;
-    const X            = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
-    const LinkIcon     = ({className}) => <Icon className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Icon>;
-    const LogOut       = ({className}) => <Icon className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>;
-    const Briefcase    = ({className}) => <Icon className={className}><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></Icon>;
-    const Trash2       = ({className}) => <Icon className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
-    const UserPlus     = ({className}) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></Icon>;
+// ── Icons ─────────────────────────────────────────────────────────────────────
+const Ico = ({c,className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{c}</svg>;
+const FileText      =({className})=><Ico className={className} c={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>}/>;
+const FileQuestion  =({className})=><Ico className={className} c={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 10.3c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.4.5.8.5 1.3 0 1.3-2 2-2 2"/><circle cx="12" cy="17" r="1"/></>}/>;
+const Layers        =({className})=><Ico className={className} c={<><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>}/>;
+const Plus          =({className})=><Ico className={className} c={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>}/>;
+const Search        =({className})=><Ico className={className} c={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}/>;
+const ArrowLeft     =({className})=><Ico className={className} c={<><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>}/>;
+const Download      =({className})=><Ico className={className} c={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>}/>;
+const UploadCloud   =({className})=><Ico className={className} c={<><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></>}/>;
+const CheckCircle   =({className})=><Ico className={className} c={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>}/>;
+const Clock         =({className})=><Ico className={className} c={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}/>;
+const AlertCircle   =({className})=><Ico className={className} c={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>}/>;
+const FilePlus      =({className})=><Ico className={className} c={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></>}/>;
+const UsersIcon     =({className})=><Ico className={className} c={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>}/>;
+const Edit2         =({className})=><Ico className={className} c={<><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></>}/>;
+const MessageSquare =({className})=><Ico className={className} c={<><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></>}/>;
+const Send          =({className})=><Ico className={className} c={<><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>}/>;
+const CornerDownRight=({className})=><Ico className={className} c={<><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></>}/>;
+const Tag           =({className})=><Ico className={className} c={<><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></>}/>;
+const BarChart2     =({className})=><Ico className={className} c={<><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>}/>;
+const X             =({className})=><Ico className={className} c={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}/>;
+const LinkIcon      =({className})=><Ico className={className} c={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>}/>;
+const LogOut        =({className})=><Ico className={className} c={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>}/>;
+const Briefcase     =({className})=><Ico className={className} c={<><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>}/>;
+const Trash2        =({className})=><Ico className={className} c={<><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>}/>;
+const UserPlus      =({className})=><Ico className={className} c={<><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></>}/>;
+const HistoryIcon   =({className})=><Ico className={className} c={<><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><polyline points="12 7 12 12 15 15"/></>}/>;
+const FilterIcon    =({className})=><Ico className={className} c={<><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></>}/>;
+const ArrowUp       =({className})=><Ico className={className} c={<><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></>}/>;
+const ArrowDown     =({className})=><Ico className={className} c={<><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>}/>;
+const CircleDot     =({className})=><Ico className={className} c={<><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></>}/>;
 
-    // ── Firebase ─────────────────────────────────────────────────────────────────
-    const firebaseConfig = {
-      apiKey: "AIzaSyCrWXPOH_Uu3MKp5OInkqbypVB-NOU1Moc",
-      authDomain: "submittal-log.firebaseapp.com",
-      projectId: "submittal-log",
-      storageBucket: "submittal-log.firebasestorage.app",
-      messagingSenderId: "776483227689",
-      appId: "1:776483227689:web:380b3c45ec975fd7223438",
-      measurementId: "G-GVC1TMK90M"
-    };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    const auth    = firebase.auth();
-    const db      = firebase.firestore();
-    const storage = firebase.storage();
-    // Shorthand for atomic array append — avoids stale-closure overwrites
-    const arrayUnion = firebase.firestore.FieldValue.arrayUnion;
+// ── Firebase ──────────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:"AIzaSyCrWXPOH_Uu3MKp5OInkqbypVB-NOU1Moc",authDomain:"submittal-log.firebaseapp.com",
+  projectId:"submittal-log",storageBucket:"submittal-log.firebasestorage.app",
+  messagingSenderId:"776483227689",appId:"1:776483227689:web:380b3c45ec975fd7223438"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(), db=firebase.firestore(), storage=firebase.storage();
+const arrayUnion=firebase.firestore.FieldValue.arrayUnion;
 
-    const INTERNAL_STATUSES = ['Unassigned','Assigned','In Review','Ready for PM Approval','Sent Out'];
-    const STATUSES = {
-      submittals: ['Pending','Approved','Approved as Noted','Revise & Resubmit','Rejected','Information Only'],
-      rfis:       ['Pending','Answered','Clarification Requested','Closed']
-    };
+const INTERNAL_STATUSES=['Unassigned','Assigned','In Review','Ready for PM Approval','Sent Out'];
+const STATUSES={submittals:['Pending','Approved','Approved as Noted','Revise & Resubmit','Rejected','Information Only'],rfis:['Pending','Answered','Clarification Requested','Closed']};
+const BIC_OPTIONS=['—','Contractor','EOR','PM','QC','Owner'];
+const BIC_COLORS={'Contractor':'bg-orange-50 text-orange-700 border-orange-200','EOR':'bg-blue-50 text-blue-700 border-blue-200','PM':'bg-purple-50 text-purple-700 border-purple-200','QC':'bg-indigo-50 text-indigo-700 border-indigo-200','Owner':'bg-green-50 text-green-700 border-green-200','—':'bg-slate-100 text-slate-500 border-slate-200'};
 
-    // ── App ──────────────────────────────────────────────────────────────────────
-    function App() {
-      // Auth
-      const [user, setUser]             = useState(null);
-      const [authLoading, setAuthLoading] = useState(true);
-      const [authMode, setAuthMode]     = useState('login');
-      const [authEmail, setAuthEmail]   = useState('');
-      const [authPassword, setAuthPassword] = useState('');
+// ── Sortable column header ────────────────────────────────────────────────────
+const SortTh = ({label, field, sortField, sortDir, onSort, className=''}) => (
+  <th className={`p-4 font-semibold cursor-pointer select-none hover:bg-slate-100 transition-colors ${className}`} onClick={()=>onSort(field)}>
+    <div className="flex items-center gap-1">
+      <span>{label}</span>
+      {sortField===field ? (sortDir==='asc' ? <ArrowUp className="w-3 h-3 text-blue-500"/> : <ArrowDown className="w-3 h-3 text-blue-500"/>) : <span className="text-slate-300 text-xs">↕</span>}
+    </div>
+  </th>
+);
 
-      // Routing
-      const [activeModule, setActiveModule]     = useState('submittals');
-      const [currentView, setCurrentView]       = useState('dashboard');
-      const [activeRecordItem, setActiveRecordItem] = useState(null);
+// ── App ───────────────────────────────────────────────────────────────────────
+function App() {
+  // Auth
+  const [user,setUser]=useState(null);
+  const [authLoading,setAuthLoading]=useState(true);
+  const [authMode,setAuthMode]=useState('login');
+  const [authEmail,setAuthEmail]=useState('');
+  const [authPassword,setAuthPassword]=useState('');
 
-      // Data
-      const [activeRecords, setActiveRecords] = useState([]);
-      const [projects, setProjects]           = useState([]);
-      const [teamMembers, setTeamMembers]     = useState([]);
-      const [loadingData, setLoadingData]     = useState(true);
+  // Routing
+  const [activeModule,setActiveModule]=useState('submittals');
+  const [currentView,setCurrentView]=useState('dashboard');
+  const [activeRecordItem,setActiveRecordItem]=useState(null);
 
-      // Upload
-      const [isUploading, setIsUploading]     = useState(false);
-      const [uploadProgress, setUploadProgress] = useState(0);
+  // Data
+  const [activeRecords,setActiveRecords]=useState([]);
+  const [projects,setProjects]=useState([]);
+  const [teamMembers,setTeamMembers]=useState([]);
+  const [loadingData,setLoadingData]=useState(true);
 
-      // Dashboard
-      const [searchQuery, setSearchQuery]   = useState('');
-      const [dashboardTab, setDashboardTab] = useState('my-queue');
+  // Upload
+  const [isUploading,setIsUploading]=useState(false);
+  const [uploadProgress,setUploadProgress]=useState(0);
 
-      // Detail editing
-      const [isEditing, setIsEditing]     = useState(false);
-      const [editFormData, setEditFormData] = useState({});
+  // Dashboard tabs + search
+  const [searchQuery,setSearchQuery]=useState('');
+  const [dashboardTab,setDashboardTab]=useState('my-queue');
 
-      // FIX #2 — controlled routing inputs (replaces defaultValue)
-      const [assignedToInput, setAssignedToInput] = useState('');
-      const [qcReviewerInput, setQcReviewerInput] = useState('');
+  // ── NEW: Filters ──────────────────────────────────────────────────────────
+  const [showFilters,setShowFilters]=useState(false);
+  const [filterProject,setFilterProject]=useState('');
+  const [filterInternalStatus,setFilterInternalStatus]=useState('');
+  const [filterExternalStatus,setFilterExternalStatus]=useState('');
+  const [filterAssignee,setFilterAssignee]=useState('');
+  const [filterSla,setFilterSla]=useState(''); // 'on-track'|'at-risk'|'overdue'|''
 
-      // Comments
-      const [newComment, setNewComment]           = useState('');
-      const [quickCommentModal, setQuickCommentModal] = useState(null);
-      const [quickCommentText, setQuickCommentText]   = useState('');
+  // ── NEW: Sort ─────────────────────────────────────────────────────────────
+  const [sortField,setSortField]=useState('dateReceived');
+  const [sortDir,setSortDir]=useState('desc');
 
-      // Project form
-      const [projForm, setProjForm]       = useState({ id:'', name:'', client:'' });
-      const [isEditingProj, setIsEditingProj] = useState(false);
+  // Detail editing
+  const [isEditing,setIsEditing]=useState(false);
+  const [editFormData,setEditFormData]=useState({});
+  const [assignedToInput,setAssignedToInput]=useState('');
+  const [qcReviewerInput,setQcReviewerInput]=useState('');
 
-      // Team form
-      const [teamForm, setTeamForm]       = useState({ id:'', name:'', email:'', role:'Structural Engineer' });
-      const [isEditingTeam, setIsEditingTeam] = useState(false);
+  // Comments
+  const [newComment,setNewComment]=useState('');
+  const [quickCommentModal,setQuickCommentModal]=useState(null);
+  const [quickCommentText,setQuickCommentText]=useState('');
 
-      // Intake form
-      const [intakeProject, setIntakeProject]       = useState('');
-      const [intakeType, setIntakeType]             = useState('new');
-      const [intakeBaseId, setIntakeBaseId]         = useState('');
-      const [intakeTitle, setIntakeTitle]           = useState('');
-      const [intakeSubtitle, setIntakeSubtitle]     = useState('');
-      const [intakeContractor, setIntakeContractor] = useState('');
-      const [intakeRevision, setIntakeRevision]     = useState(0);
-      const [intakeSlaDays, setIntakeSlaDays]       = useState(14);
-      const [intakeComponents, setIntakeComponents] = useState('');
-      const [intakeDisciplines, setIntakeDisciplines] = useState('');
-      const [intakeRelatedDocs, setIntakeRelatedDocs] = useState('');
-      const [intakeFile, setIntakeFile]             = useState(null);
+  // Project / Team forms
+  const [projForm,setProjForm]=useState({id:'',name:'',client:''});
+  const [isEditingProj,setIsEditingProj]=useState(false);
+  const [teamForm,setTeamForm]=useState({id:'',name:'',email:'',role:'Structural Engineer'});
+  const [isEditingTeam,setIsEditingTeam]=useState(false);
 
-      const [outgoingFile, setOutgoingFile] = useState(null);
-      const [toast, setToast]               = useState(null);
+  // Intake form
+  const [intakeProject,setIntakeProject]=useState('');
+  const [intakeType,setIntakeType]=useState('new');
+  const [intakeBaseId,setIntakeBaseId]=useState('');
+  const [intakeTitle,setIntakeTitle]=useState('');
+  const [intakeSubtitle,setIntakeSubtitle]=useState('');
+  const [intakeContractor,setIntakeContractor]=useState('');
+  const [intakeRevision,setIntakeRevision]=useState(0);
+  const [intakeSlaDays,setIntakeSlaDays]=useState(14);
+  const [intakeComponents,setIntakeComponents]=useState('');
+  const [intakeDisciplines,setIntakeDisciplines]=useState('');
+  const [intakeRelatedDocs,setIntakeRelatedDocs]=useState('');
+  const [intakeFile,setIntakeFile]=useState(null);
+  const [outgoingFile,setOutgoingFile]=useState(null);
+  const [toast,setToast]=useState(null);
 
-      // FIX #3 — ref tracks active record ID so Firestore listener doesn't need
-      // it as a dependency (prevents re-subscribe on every open/close)
-      const activeRecordIdRef = useRef(null);
-      useEffect(() => { activeRecordIdRef.current = activeRecordItem?.id ?? null; }, [activeRecordItem]);
+  const activeRecordIdRef=useRef(null);
+  useEffect(()=>{activeRecordIdRef.current=activeRecordItem?.id??null;},[activeRecordItem]);
 
-      // FIX #1 — resolve the logged-in user's display name from the Team registry.
-      // Falls back to email if they haven't been added as a team member.
-      // This ensures assignedTo values stored in Firestore always match
-      // the names shown in the datalist, and that My Queue filtering works.
-      const activeUserRole = useMemo(() => {
-        if (!user) return { id: 'guest', name: 'Guest' };
-        const match = teamMembers.find(m => m.email === user.email);
-        return { id: user.uid, name: match ? match.name : user.email };
-      }, [user, teamMembers]);
+  // Resolved identity
+  const activeUserRole=useMemo(()=>{
+    if(!user) return {id:'guest',name:'Guest'};
+    const match=teamMembers.find(m=>m.email===user.email);
+    return {id:user.uid, name:match?match.name:user.email};
+  },[user,teamMembers]);
 
-      // FIX #1 cont. — datalist uses the already-resolved name, so there's no
-      // mix of emails vs. names in the dropdown
-      const allUserOptions = useMemo(() => {
-        const opts = new Set(['Unassigned']);
-        opts.add(activeUserRole.name);          // resolved name or email
-        teamMembers.forEach(m => opts.add(m.name));
-        return Array.from(opts);
-      }, [activeUserRole.name, teamMembers]);
+  const allUserOptions=useMemo(()=>{
+    const s=new Set(['Unassigned']);
+    s.add(activeUserRole.name);
+    teamMembers.forEach(m=>s.add(m.name));
+    return Array.from(s);
+  },[activeUserRole.name,teamMembers]);
 
-      const showToast = (msg, type = 'success') => {
-        setToast({ message: msg, type });
-        setTimeout(() => setToast(null), 3000);
-      };
+  const showToast=(msg,type='success')=>{setToast({message:msg,type});setTimeout(()=>setToast(null),3000);};
 
-      // FIX #2 — sync controlled routing inputs whenever the open record changes
-      useEffect(() => {
-        setAssignedToInput(activeRecordItem?.assignedTo ?? '');
-        setQcReviewerInput(activeRecordItem?.qcReviewer ?? '');
-      }, [activeRecordItem?.id]);
+  // Sync controlled routing inputs
+  useEffect(()=>{
+    setAssignedToInput(activeRecordItem?.assignedTo??'');
+    setQcReviewerInput(activeRecordItem?.qcReviewer??'');
+  },[activeRecordItem?.id]);
 
-      // Reset transient state when navigating away
-      useEffect(() => {
-        if (currentView === 'intake') {
-          setIntakeProject(''); setIntakeType('new'); setIntakeBaseId('');
-          setIntakeTitle(''); setIntakeSubtitle(''); setIntakeContractor('');
-          setIntakeRevision(0); setIntakeSlaDays(14); setIntakeComponents('');
-          setIntakeDisciplines(''); setIntakeRelatedDocs(''); setIntakeFile(null);
-          setUploadProgress(0);
-        }
-        if (currentView !== 'detail') {
-          setIsEditing(false); setNewComment(''); setOutgoingFile(null); setUploadProgress(0);
-        }
-        if (currentView !== 'projects') { setProjForm({ id:'', name:'', client:'' }); setIsEditingProj(false); }
-        if (currentView !== 'team')     { setTeamForm({ id:'', name:'', email:'', role:'Structural Engineer' }); setIsEditingTeam(false); }
-      }, [currentView, activeModule]);
+  // Reset filters when switching modules
+  useEffect(()=>{
+    setFilterProject('');setFilterInternalStatus('');setFilterExternalStatus('');
+    setFilterAssignee('');setFilterSla('');setShowFilters(false);
+    setSortField('dateReceived');setSortDir('desc');
+  },[activeModule]);
 
-      useEffect(() => {
-        if (intakeType === 'revision' && intakeBaseId) {
-          const base = activeRecords.find(s => s.id === intakeBaseId);
-          if (base) {
-            setIntakeTitle(base.title); setIntakeSubtitle(base.subtitle || '');
-            setIntakeContractor(base.contractor); setIntakeRevision(Number(base.revision) + 1);
-            setIntakeSlaDays(base.slaDays || 14); setIntakeRelatedDocs(base.relatedDocs || '');
-          }
-        }
-      }, [intakeType, intakeBaseId, activeRecords]);
+  // Reset view-specific state
+  useEffect(()=>{
+    if(currentView==='intake'){
+      setIntakeProject('');setIntakeType('new');setIntakeBaseId('');setIntakeTitle('');
+      setIntakeSubtitle('');setIntakeContractor('');setIntakeRevision(0);setIntakeSlaDays(14);
+      setIntakeComponents('');setIntakeDisciplines('');setIntakeRelatedDocs('');setIntakeFile(null);setUploadProgress(0);
+    }
+    if(currentView!=='detail'){setIsEditing(false);setNewComment('');setOutgoingFile(null);setUploadProgress(0);}
+    if(currentView!=='projects'){setProjForm({id:'',name:'',client:''});setIsEditingProj(false);}
+    if(currentView!=='team'){setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'});setIsEditingTeam(false);}
+  },[currentView,activeModule]);
 
-      // ── Auth listener ──────────────────────────────────────────────────────────
-      useEffect(() => {
-        const unsub = auth.onAuthStateChanged(u => { setUser(u); setAuthLoading(false); });
-        return () => unsub();
-      }, []);
+  useEffect(()=>{
+    if(intakeType==='revision'&&intakeBaseId){
+      const base=activeRecords.find(s=>s.id===intakeBaseId);
+      if(base){setIntakeTitle(base.title);setIntakeSubtitle(base.subtitle||'');setIntakeContractor(base.contractor);setIntakeRevision(Number(base.revision)+1);setIntakeSlaDays(base.slaDays||14);setIntakeRelatedDocs(base.relatedDocs||'');}
+    }
+  },[intakeType,intakeBaseId,activeRecords]);
 
-      const handleAuthSubmit = async (e) => {
-        e.preventDefault(); setAuthLoading(true);
-        try {
-          if (authMode === 'login') { await auth.signInWithEmailAndPassword(authEmail, authPassword); showToast('Logged in successfully'); }
-          else { await auth.createUserWithEmailAndPassword(authEmail, authPassword); showToast('Account created'); }
-        } catch (err) { showToast(err.message, 'error'); }
-        finally { setAuthLoading(false); }
-      };
+  // Auth
+  useEffect(()=>{const u=auth.onAuthStateChanged(u=>{setUser(u);setAuthLoading(false);});return()=>u();},[]);
+  const handleAuthSubmit=async(e)=>{e.preventDefault();setAuthLoading(true);try{if(authMode==='login'){await auth.signInWithEmailAndPassword(authEmail,authPassword);showToast('Logged in');}else{await auth.createUserWithEmailAndPassword(authEmail,authPassword);showToast('Account created');}}catch(err){showToast(err.message,'error');}finally{setAuthLoading(false);}};
+  const handleLogout=async()=>{await auth.signOut();showToast('Logged out');};
 
-      const handleLogout = async () => { await auth.signOut(); showToast('Logged out'); };
+  // Firestore listeners
+  useEffect(()=>{
+    if(!user) return;
+    setLoadingData(true);
+    const recU=db.collection(activeModule).onSnapshot(snap=>{
+      const data=snap.docs.map(d=>({id:d.id,...d.data()}));
+      data.sort((a,b)=>new Date(b.dateReceived)-new Date(a.dateReceived));
+      setActiveRecords(data);
+      if(activeRecordIdRef.current){const upd=data.find(s=>s.id===activeRecordIdRef.current);if(upd)setActiveRecordItem(upd);}
+      setLoadingData(false);
+    },err=>{console.error(err);setLoadingData(false);if(err.code==='permission-denied')showToast('Permission denied.','error');});
+    const prjU=db.collection('projects').onSnapshot(snap=>{const d=snap.docs.map(x=>({id:x.id,...x.data()}));d.sort((a,b)=>a.name.localeCompare(b.name));setProjects(d);},err=>console.error(err));
+    const tmU=db.collection('teamMembers').onSnapshot(snap=>{const d=snap.docs.map(x=>({id:x.id,...x.data()}));d.sort((a,b)=>a.name.localeCompare(b.name));setTeamMembers(d);},err=>console.error(err));
+    return()=>{recU();prjU();tmU();};
+  },[user,activeModule]);
 
-      // ── Firestore listeners ────────────────────────────────────────────────────
-      // FIX #3 — activeRecordItem?.id removed from deps; use ref inside callback
-      useEffect(() => {
-        if (!user) return;
-        setLoadingData(true);
+  // Project handlers
+  const handleProjectSubmit=async(e)=>{e.preventDefault();try{if(isEditingProj){await db.collection('projects').doc(projForm.id).update({name:projForm.name,client:projForm.client});showToast('Project updated.');}else{await db.collection('projects').doc(`PRJ-${Date.now().toString().slice(-4)}`).set({name:projForm.name,client:projForm.client,createdAt:new Date().toISOString()});showToast('Project added.');}setProjForm({id:'',name:'',client:''});setIsEditingProj(false);}catch{showToast('Error saving project.','error');}};
+  const handleDeleteProject=async(id)=>{try{await db.collection('projects').doc(id).delete();showToast('Project removed.');}catch{showToast('Failed.','error');}};
 
-        const recUnsub = db.collection(activeModule).onSnapshot(snap => {
-          const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          data.sort((a, b) => new Date(b.dateReceived) - new Date(a.dateReceived));
-          setActiveRecords(data);
-          // Keep the open detail record in sync using the ref (not stale closure)
-          if (activeRecordIdRef.current) {
-            const updated = data.find(s => s.id === activeRecordIdRef.current);
-            if (updated) setActiveRecordItem(updated);
-          }
-          setLoadingData(false);
-        }, err => {
-          console.error(err);
-          setLoadingData(false);
-          if (err.code === 'permission-denied') showToast('Permission denied.', 'error');
-        });
+  // Team handlers
+  const handleTeamSubmit=async(e)=>{e.preventDefault();try{if(isEditingTeam){await db.collection('teamMembers').doc(teamForm.id).update({name:teamForm.name,email:teamForm.email,role:teamForm.role});showToast('Member updated.');}else{await db.collection('teamMembers').doc(`USR-${Date.now().toString().slice(-4)}`).set({name:teamForm.name,email:teamForm.email,role:teamForm.role,createdAt:new Date().toISOString()});showToast('Member added.');}setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'});setIsEditingTeam(false);}catch{showToast('Error saving member.','error');}};
+  const handleDeleteTeamMember=async(id)=>{try{await db.collection('teamMembers').doc(id).delete();showToast('Member removed.');}catch{showToast('Failed.','error');}};
 
-        const projUnsub = db.collection('projects').onSnapshot(snap => {
-          const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          data.sort((a, b) => a.name.localeCompare(b.name));
-          setProjects(data);
-        }, err => console.error(err));
+  // File upload
+  const uploadFileWithProgress=(file,path)=>new Promise((res,rej)=>{
+    const task=storage.ref().child(path).put(file);
+    task.on('state_changed',snap=>setUploadProgress(Math.round(snap.bytesTransferred/snap.totalBytes*100)),err=>{if(err.code==='storage/unauthorized')showToast('Upload blocked: check Storage rules.','error');rej(err);},async()=>{try{res(await task.snapshot.ref.getDownloadURL());}catch(e){rej(e);}});
+  });
 
-        const teamUnsub = db.collection('teamMembers').onSnapshot(snap => {
-          const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          data.sort((a, b) => a.name.localeCompare(b.name));
-          setTeamMembers(data);
-        }, err => console.error(err));
-
-        return () => { recUnsub(); projUnsub(); teamUnsub(); };
-      }, [user, activeModule]); // ← activeRecordItem?.id intentionally removed
-
-      // ── Project handlers ───────────────────────────────────────────────────────
-      const handleProjectSubmit = async (e) => {
-        e.preventDefault();
-        try {
-          if (isEditingProj) {
-            await db.collection('projects').doc(projForm.id).update({ name: projForm.name, client: projForm.client });
-            showToast('Project updated.');
-          } else {
-            await db.collection('projects').doc(`PRJ-${Date.now().toString().slice(-4)}`).set({ name: projForm.name, client: projForm.client, createdAt: new Date().toISOString() });
-            showToast('Project added.');
-          }
-          setProjForm({ id:'', name:'', client:'' }); setIsEditingProj(false);
-        } catch (err) { showToast('Error saving project.', 'error'); }
-      };
-
-      const handleDeleteProject = async (id) => {
-        try { await db.collection('projects').doc(id).delete(); showToast('Project removed.'); }
-        catch (err) { showToast('Failed to remove project.', 'error'); }
-      };
-
-      // ── Team handlers ──────────────────────────────────────────────────────────
-      const handleTeamSubmit = async (e) => {
-        e.preventDefault();
-        try {
-          if (isEditingTeam) {
-            await db.collection('teamMembers').doc(teamForm.id).update({ name: teamForm.name, email: teamForm.email, role: teamForm.role });
-            showToast('Team member updated.');
-          } else {
-            await db.collection('teamMembers').doc(`USR-${Date.now().toString().slice(-4)}`).set({ name: teamForm.name, email: teamForm.email, role: teamForm.role, createdAt: new Date().toISOString() });
-            showToast('Team member added.');
-          }
-          setTeamForm({ id:'', name:'', email:'', role:'Structural Engineer' }); setIsEditingTeam(false);
-        } catch (err) { showToast('Error saving team member.', 'error'); }
-      };
-
-      const handleDeleteTeamMember = async (id) => {
-        try { await db.collection('teamMembers').doc(id).delete(); showToast('Team member removed.'); }
-        catch (err) { showToast('Failed to remove team member.', 'error'); }
-      };
-
-      // ── File upload helper ─────────────────────────────────────────────────────
-      const uploadFileWithProgress = (file, filePath) => new Promise((resolve, reject) => {
-        const task = storage.ref().child(filePath).put(file);
-        task.on('state_changed',
-          snap => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-          err  => { if (err.code === 'storage/unauthorized') showToast('Upload blocked: check Storage rules.', 'error'); reject(err); },
-          async () => { try { resolve(await task.snapshot.ref.getDownloadURL()); } catch(e) { reject(e); } }
-        );
+  // Intake submit
+  const handleIntakeSubmit=async(e)=>{
+    e.preventDefault();if(!user)return;
+    setIsUploading(true);setUploadProgress(0);
+    const pfx=activeModule==='submittals'?'SUB':'RFI';
+    const rid=`${pfx}-${Date.now().toString().slice(-6)}`;
+    const sla=Number(intakeSlaDays)||14;
+    let fileUrl=null;
+    try{
+      if(intakeFile){const ext=intakeFile.name.split('.').pop();fileUrl=await uploadFileWithProgress(intakeFile,`projects/${intakeProject}/${activeModule}/${rid}/Incoming_Rev${intakeRevision}.${ext}`);}
+      const tags={components:intakeComponents.split(',').map(s=>s.trim()).filter(Boolean),disciplines:intakeDisciplines.split(',').map(s=>s.trim()).filter(Boolean)};
+      const rawAssignee=e.target.elements.assignedTo.value.trim();
+      const rawBic=e.target.elements.ballInCourt.value||'—';
+      await db.collection(activeModule).doc(rid).set({
+        projectId:intakeProject,projectName:projects.find(p=>p.id===intakeProject)?.name||'Unknown',
+        title:intakeTitle,subtitle:intakeSubtitle||'',contractor:intakeContractor,
+        revision:Number(intakeRevision),baseSubmittalId:intakeBaseId||null,
+        dateReceived:new Date().toISOString(),slaDays:sla,
+        dueDate:new Date(Date.now()+sla*86400000).toISOString(),
+        assignedTo:rawAssignee||'Unassigned',ballInCourt:rawBic,
+        internalStatus:(!rawAssignee||rawAssignee==='Unassigned')?'Unassigned':'Assigned',
+        externalStatus:'Pending',incomingPdfRef:fileUrl,incomingFileName:intakeFile?intakeFile.name:null,
+        outgoingPdfRef:null,outgoingFileName:null,relatedDocs:intakeRelatedDocs.trim(),
+        comments:[],tags,loggedBy:activeUserRole.name,loggedById:activeUserRole.id,qcReviewer:'',
+        history:[{timestamp:new Date().toISOString(),action:`Ingested ${activeModule.slice(0,-1)}${intakeFile?' with attachment':''}`,user:activeUserRole.name}]
       });
+      showToast(`${termModule} logged!`);setCurrentView('dashboard');
+    }catch(err){console.error(err);showToast('Error saving record.','error');}
+    finally{setIsUploading(false);setUploadProgress(0);}
+  };
 
-      // ── Record handlers ────────────────────────────────────────────────────────
-      const handleIntakeSubmit = async (e) => {
-        e.preventDefault(); if (!user) return;
-        setIsUploading(true); setUploadProgress(0);
-        const prefix   = activeModule === 'submittals' ? 'SUB' : 'RFI';
-        const recordId = `${prefix}-${Date.now().toString().slice(-6)}`;
-        const slaDays  = Number(intakeSlaDays) || 14;
-        let fileUrl    = null;
-        try {
-          if (intakeFile) {
-            const ext = intakeFile.name.split('.').pop();
-            fileUrl = await uploadFileWithProgress(intakeFile, `projects/${intakeProject}/${activeModule}/${recordId}/Incoming_Rev${intakeRevision}.${ext}`);
-          }
-          const tags        = { components: intakeComponents.split(',').map(s => s.trim()).filter(Boolean), disciplines: intakeDisciplines.split(',').map(s => s.trim()).filter(Boolean) };
-          const rawAssignee = e.target.elements.assignedTo.value.trim();
-          await db.collection(activeModule).doc(recordId).set({
-            projectId: intakeProject, projectName: projects.find(p => p.id === intakeProject)?.name || 'Unknown',
-            title: intakeTitle, subtitle: intakeSubtitle || '', contractor: intakeContractor,
-            revision: Number(intakeRevision), baseSubmittalId: intakeBaseId || null,
-            dateReceived: new Date().toISOString(), slaDays,
-            dueDate: new Date(Date.now() + slaDays * 86400000).toISOString(),
-            assignedTo: rawAssignee || 'Unassigned',
-            internalStatus: (!rawAssignee || rawAssignee === 'Unassigned') ? 'Unassigned' : 'Assigned',
-            externalStatus: 'Pending', incomingPdfRef: fileUrl,
-            incomingFileName: intakeFile ? intakeFile.name : null,
-            outgoingPdfRef: null, outgoingFileName: null,
-            relatedDocs: intakeRelatedDocs.trim(), comments: [], tags,
-            loggedBy: activeUserRole.name, loggedById: activeUserRole.id, qcReviewer: '',
-            // Fresh record: plain array is correct here (no prior history to merge)
-            history: [{ timestamp: new Date().toISOString(), action: `Ingested ${activeModule.slice(0,-1)}${intakeFile ? ' with attachment' : ''}`, user: activeUserRole.name }]
-          });
-          showToast(`${termModule} logged successfully!`);
-          setCurrentView('dashboard');
-        } catch (err) { console.error(err); showToast('Error saving record or upload failed.', 'error'); }
-        finally { setIsUploading(false); setUploadProgress(0); }
-      };
+  const handleUploadOutgoingFile=async()=>{
+    if(!outgoingFile||!activeRecordItem||!user)return;
+    setIsUploading(true);setUploadProgress(0);
+    try{
+      const ext=outgoingFile.name.split('.').pop();
+      const url=await uploadFileWithProgress(outgoingFile,`projects/${activeRecordItem.projectId}/${activeModule}/${activeRecordItem.id}/Markups_Rev${activeRecordItem.revision}.${ext}`);
+      await db.collection(activeModule).doc(activeRecordItem.id).update({outgoingPdfRef:url,outgoingFileName:outgoingFile.name,history:arrayUnion({timestamp:new Date().toISOString(),action:`Uploaded Redlined Response (${outgoingFile.name})`,user:activeUserRole.name})});
+      showToast('Markups uploaded!');setOutgoingFile(null);
+    }catch{showToast('Upload failed.','error');}
+    finally{setIsUploading(false);setUploadProgress(0);}
+  };
 
-      const handleUploadOutgoingFile = async () => {
-        if (!outgoingFile || !activeRecordItem || !user) return;
-        setIsUploading(true); setUploadProgress(0);
-        try {
-          const ext = outgoingFile.name.split('.').pop();
-          const url = await uploadFileWithProgress(outgoingFile, `projects/${activeRecordItem.projectId}/${activeModule}/${activeRecordItem.id}/Markups_Rev${activeRecordItem.revision}.${ext}`);
-          // FIX #4 — arrayUnion prevents overwriting history from a stale closure
-          await db.collection(activeModule).doc(activeRecordItem.id).update({
-            outgoingPdfRef: url, outgoingFileName: outgoingFile.name,
-            history: arrayUnion({ timestamp: new Date().toISOString(), action: `Uploaded Redlined Response (${outgoingFile.name})`, user: activeUserRole.name })
-          });
-          showToast('Markups uploaded!'); setOutgoingFile(null);
-        } catch (err) { showToast('Failed to upload markups.', 'error'); }
-        finally { setIsUploading(false); setUploadProgress(0); }
-      };
+  const handleUpdateStatus=async(recordId,updateData)=>{
+    try{await db.collection(activeModule).doc(recordId).update({...updateData,history:arrayUnion({timestamp:new Date().toISOString(),action:`Updated: ${Object.keys(updateData).join(', ')}`,user:activeUserRole.name})});showToast('Updated!');}
+    catch{showToast('Error updating.','error');}
+  };
 
-      // FIX #4 — arrayUnion for all status/routing updates
-      const handleUpdateStatus = async (recordId, updateData) => {
-        try {
-          await db.collection(activeModule).doc(recordId).update({
-            ...updateData,
-            history: arrayUnion({ timestamp: new Date().toISOString(), action: 'Updated properties/status', user: activeUserRole.name })
-          });
-          showToast('Updated successfully!');
-        } catch (err) { showToast('Error updating record.', 'error'); }
-      };
+  const handleDeleteRecord=async(recordId)=>{
+    if(!window.confirm(`Permanently delete this ${termModule}?`))return;
+    try{await db.collection(activeModule).doc(recordId).delete();showToast('Deleted.');setActiveRecordItem(null);setCurrentView('dashboard');}
+    catch{showToast('Error deleting.','error');}
+  };
 
-      const handleDeleteRecord = async (recordId) => {
-        if (!window.confirm(`Permanently delete this ${termModule}? This cannot be undone.`)) return;
-        try {
-          await db.collection(activeModule).doc(recordId).delete();
-          showToast(`${termModule} deleted.`); setActiveRecordItem(null); setCurrentView('dashboard');
-        } catch (err) { showToast(`Error deleting ${termModule}.`, 'error'); }
-      };
+  const handleEditSubmit=async(e)=>{
+    e.preventDefault();
+    try{
+      const sd=Number(editFormData.slaDays)||14;
+      const dd=new Date(new Date(activeRecordItem.dateReceived).getTime()+sd*86400000).toISOString();
+      await db.collection(activeModule).doc(activeRecordItem.id).update({title:editFormData.title,subtitle:editFormData.subtitle,contractor:editFormData.contractor,revision:Number(editFormData.revision),slaDays:sd,dueDate:dd,relatedDocs:editFormData.relatedDocs,history:arrayUnion({timestamp:new Date().toISOString(),action:'Edited Metadata',user:activeUserRole.name})});
+      setIsEditing(false);showToast('Properties updated.');
+    }catch{showToast('Error saving.','error');}
+  };
 
-      // FIX #4 — arrayUnion
-      const handleEditSubmit = async (e) => {
-        e.preventDefault();
-        try {
-          const newSlaDays = Number(editFormData.slaDays) || 14;
-          const newDueDate = new Date(new Date(activeRecordItem.dateReceived).getTime() + newSlaDays * 86400000).toISOString();
-          await db.collection(activeModule).doc(activeRecordItem.id).update({
-            title: editFormData.title, subtitle: editFormData.subtitle,
-            contractor: editFormData.contractor, revision: Number(editFormData.revision),
-            slaDays: newSlaDays, dueDate: newDueDate, relatedDocs: editFormData.relatedDocs,
-            history: arrayUnion({ timestamp: new Date().toISOString(), action: 'Edited Metadata', user: activeUserRole.name })
-          });
-          setIsEditing(false); showToast('Properties updated.');
-        } catch (err) { showToast('Error saving edits.', 'error'); }
-      };
+  const handleAddComment=async(e)=>{
+    e.preventDefault();if(!newComment.trim())return;
+    const c={id:Date.now().toString(),text:newComment.trim(),user:activeUserRole.name,timestamp:new Date().toISOString()};
+    try{await db.collection(activeModule).doc(activeRecordItem.id).update({comments:arrayUnion(c)});setNewComment('');}
+    catch{showToast('Error adding comment.','error');}
+  };
 
-      const handleAddComment = async (e) => {
-        e.preventDefault(); if (!newComment.trim()) return;
-        const c = { id: Date.now().toString(), text: newComment.trim(), user: activeUserRole.name, timestamp: new Date().toISOString() };
-        try {
-          // Comments use arrayUnion too — safe concurrent appends
-          await db.collection(activeModule).doc(activeRecordItem.id).update({ comments: arrayUnion(c) });
-          setNewComment('');
-        } catch (err) { showToast('Error adding comment.', 'error'); }
-      };
+  const handleQuickCommentSubmit=async(e)=>{
+    e.preventDefault();if(!quickCommentText.trim()||!quickCommentModal)return;
+    const c={id:Date.now().toString(),text:quickCommentText.trim(),user:activeUserRole.name,timestamp:new Date().toISOString()};
+    try{await db.collection(activeModule).doc(quickCommentModal.id).update({comments:arrayUnion(c)});showToast('Comment added.');setQuickCommentModal(null);setQuickCommentText('');}
+    catch{showToast('Error.','error');}
+  };
 
-      const handleQuickCommentSubmit = async (e) => {
-        e.preventDefault(); if (!quickCommentText.trim() || !quickCommentModal) return;
-        const c = { id: Date.now().toString(), text: quickCommentText.trim(), user: activeUserRole.name, timestamp: new Date().toISOString() };
-        try {
-          await db.collection(activeModule).doc(quickCommentModal.id).update({ comments: arrayUnion(c) });
-          showToast('Comment added.'); setQuickCommentModal(null); setQuickCommentText('');
-        } catch (err) { showToast('Error adding comment.', 'error'); }
-      };
+  // Sort handler
+  const handleSort=(field)=>{if(sortField===field){setSortDir(d=>d==='asc'?'desc':'asc');}else{setSortField(field);setSortDir('desc');}};
 
-      // ── Derived data ───────────────────────────────────────────────────────────
-      const isRfi       = activeModule === 'rfis';
-      const termModule  = isRfi ? 'RFI' : 'Submittal';
-      const termRev     = isRfi ? 'RFI No.' : 'Revision';
-      const termSubtitle= isRfi ? 'Proposed Solution / Reason' : 'Description / Spec Reference';
+  // Derived
+  const isRfi=activeModule==='rfis';
+  const termModule=isRfi?'RFI':'Submittal';
+  const termRev=isRfi?'RFI No.':'Revision';
+  const termSubtitle=isRfi?'Proposed Solution / Reason':'Description / Spec Reference';
 
-      const filteredRecords = activeRecords.filter(s => {
-        const matchSearch = s.title.toLowerCase().includes(searchQuery.toLowerCase()) || s.projectName.toLowerCase().includes(searchQuery.toLowerCase());
-        if (dashboardTab === 'my-queue') return matchSearch && s.assignedTo === activeUserRole.name && s.internalStatus !== 'Sent Out';
-        return matchSearch;
-      });
+  const activeFilterCount=[filterProject,filterInternalStatus,filterExternalStatus,filterAssignee,filterSla].filter(Boolean).length;
 
-      const treeRecords = useMemo(() => {
-        const map = {};
-        filteredRecords.forEach(s => { map[s.id] = { ...s, children: [] }; });
-        const roots = [];
-        filteredRecords.forEach(s => {
-          if (s.baseSubmittalId && map[s.baseSubmittalId]) map[s.baseSubmittalId].children.push(map[s.id]);
-          else roots.push(map[s.id]);
-        });
-        const getMaxDate = n => { let m = new Date(n.dateReceived).getTime(); n.children.forEach(c => { const cm = getMaxDate(c); if (cm > m) m = cm; }); return m; };
-        roots.sort((a, b) => getMaxDate(b) - getMaxDate(a));
-        const flat = [];
-        roots.forEach(root => {
-          const all = [root, ...root.children].sort((a, b) => a.revision - b.revision);
-          flat.push({ isVirtual: true, id: `GROUP-${root.id}`, title: root.title, projectName: root.projectName, contractor: root.contractor, itemCount: all.length });
-          all.forEach(item => { item.indentLevel = 1; flat.push(item); });
-        });
-        return flat;
-      }, [filteredRecords]);
+  const filteredRecords=useMemo(()=>activeRecords.filter(s=>{
+    const matchSearch=!searchQuery||s.title.toLowerCase().includes(searchQuery.toLowerCase())||s.projectName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchProject=!filterProject||s.projectId===filterProject;
+    const matchInt=!filterInternalStatus||s.internalStatus===filterInternalStatus;
+    const matchExt=!filterExternalStatus||s.externalStatus===filterExternalStatus;
+    const matchAssignee=!filterAssignee||s.assignedTo===filterAssignee;
+    const de=Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000);
+    const dr=(s.slaDays||14)-de;
+    const matchSla=!filterSla||(filterSla==='overdue'&&dr<0)||(filterSla==='at-risk'&&dr>=0&&dr<=3)||(filterSla==='on-track'&&dr>3);
+    const base=matchSearch&&matchProject&&matchInt&&matchExt&&matchAssignee&&matchSla;
+    if(dashboardTab==='my-queue')return base&&s.assignedTo===activeUserRole.name&&s.internalStatus!=='Sent Out';
+    return base;
+  }),[activeRecords,searchQuery,filterProject,filterInternalStatus,filterExternalStatus,filterAssignee,filterSla,dashboardTab,activeUserRole.name]);
 
-      // FIX #5 — exportToCSV moved after treeRecords so it always closes over current value
-      const exportToCSV = () => {
-        const lbl = isRfi ? 'RFI' : 'Submittal';
-        const headers = [`${lbl} ID`, termRev, 'Title', termSubtitle, 'Project', 'Contractor', 'Logged By', 'Internal Status', 'External Status', 'Assigned To', 'QC Reviewer', 'Date Received', 'SLA Days', 'Due Date', 'Components', 'Disciplines', 'Related Docs'];
-        const q = s => `"${(s||'').replace(/"/g,'""')}"`;
-        const rows = treeRecords.filter(r => !r.isVirtual).map(s => [
-          s.id, s.revision, q(s.title), q(s.subtitle), q(s.projectName), q(s.contractor), q(s.loggedBy),
-          s.internalStatus, s.externalStatus, q(s.assignedTo||'Unassigned'), q(s.qcReviewer),
-          new Date(s.dateReceived).toLocaleDateString(), s.slaDays, new Date(s.dueDate).toLocaleDateString(),
-          q((s.tags?.components||[]).join(', ')), q((s.tags?.disciplines||[]).join(', ')), q(s.relatedDocs)
-        ]);
-        const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-        const a = document.createElement('a'); a.href = encodeURI(csv);
-        a.download = `${lbl}_Log_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        showToast('Export complete.');
-      };
+  // SLA counts (from all active, not just filtered, for accurate health picture)
+  const slaCounts=useMemo(()=>{
+    const items=activeRecords.filter(s=>s.internalStatus!=='Sent Out');
+    return items.reduce((acc,s)=>{
+      const de=Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000);
+      const dr=(s.slaDays||14)-de;
+      if(dr<0)acc.overdue++;else if(dr<=3)acc.atRisk++;else acc.onTrack++;
+      return acc;
+    },{onTrack:0,atRisk:0,overdue:0});
+  },[activeRecords]);
 
-      // ── Auth loading / login screens ───────────────────────────────────────────
-      if (authLoading) return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <div className="animate-pulse flex flex-col items-center">
-            <UploadCloud className="w-12 h-12 text-blue-600 mb-4" />
-            <p className="text-slate-600 font-medium">Initializing Secure Environment...</p>
+  const treeRecords=useMemo(()=>{
+    const map={};filteredRecords.forEach(s=>{map[s.id]={...s,children:[]};});
+    const roots=[];filteredRecords.forEach(s=>{if(s.baseSubmittalId&&map[s.baseSubmittalId])map[s.baseSubmittalId].children.push(map[s.id]);else roots.push(map[s.id]);});
+    const getMaxDate=n=>{let m=new Date(n.dateReceived).getTime();n.children.forEach(c=>{const cm=getMaxDate(c);if(cm>m)m=cm;});return m;};
+    const getMinDue=n=>{let m=new Date(n.dueDate).getTime();n.children.forEach(c=>{const cm=new Date(c.dueDate).getTime();if(cm<m)m=cm;});return m;};
+    if(sortField==='title') roots.sort((a,b)=>sortDir==='asc'?a.title.localeCompare(b.title):b.title.localeCompare(a.title));
+    else if(sortField==='dueDate') roots.sort((a,b)=>sortDir==='asc'?getMinDue(a)-getMinDue(b):getMinDue(b)-getMinDue(a));
+    else roots.sort((a,b)=>sortDir==='asc'?getMaxDate(a)-getMaxDate(b):getMaxDate(b)-getMaxDate(a));
+    const flat=[];
+    roots.forEach(root=>{
+      const all=[root,...root.children].sort((a,b)=>a.revision-b.revision);
+      flat.push({isVirtual:true,id:`GROUP-${root.id}`,title:root.title,projectName:root.projectName,contractor:root.contractor,itemCount:all.length});
+      all.forEach(item=>{item.indentLevel=1;flat.push(item);});
+    });
+    return flat;
+  },[filteredRecords,sortField,sortDir]);
+
+  const exportToCSV=()=>{
+    const lbl=isRfi?'RFI':'Submittal';
+    const headers=[`${lbl} ID`,termRev,'Title',termSubtitle,'Project','Contractor','Ball in Court','Logged By','Internal Status','External Status','Assigned To','QC Reviewer','Date Received','SLA Days','Due Date','Components','Disciplines','Related Docs'];
+    const q=s=>`"${(s||'').replace(/"/g,'""')}"`;
+    const rows=treeRecords.filter(r=>!r.isVirtual).map(s=>[s.id,s.revision,q(s.title),q(s.subtitle),q(s.projectName),q(s.contractor),s.ballInCourt||'—',q(s.loggedBy),s.internalStatus,s.externalStatus,q(s.assignedTo||'Unassigned'),q(s.qcReviewer),new Date(s.dateReceived).toLocaleDateString(),s.slaDays,new Date(s.dueDate).toLocaleDateString(),q((s.tags?.components||[]).join(', ')),q((s.tags?.disciplines||[]).join(', ')),q(s.relatedDocs)]);
+    const csv='data:text/csv;charset=utf-8,'+[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+    const a=document.createElement('a');a.href=encodeURI(csv);a.download=`${lbl}_Log_${new Date().toISOString().split('T')[0]}.csv`;document.body.appendChild(a);a.click();document.body.removeChild(a);
+    showToast('Export complete.');
+  };
+
+  // ── Auth screens ──────────────────────────────────────────────────────────
+  if(authLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-pulse flex flex-col items-center"><UploadCloud className="w-12 h-12 text-blue-600 mb-4"/><p className="text-slate-600 font-medium">Initializing...</p></div></div>;
+
+  if(!user) return (
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center"><div className="bg-slate-800 p-3 rounded-xl"><Layers className="w-8 h-8 text-white"/></div></div>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">Bridge<span className="text-blue-600">Sync</span> Engineering</h2>
+        <p className="mt-2 text-center text-sm text-slate-600">{authMode==='login'?'Sign in to access project records':'Register a new account'}</p>
+      </div>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200">
+          <form className="space-y-6" onSubmit={handleAuthSubmit}>
+            <div><label className="block text-sm font-medium text-slate-700">Email</label><input type="email" required value={authEmail} onChange={e=>setAuthEmail(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/></div>
+            <div><label className="block text-sm font-medium text-slate-700">Password</label><input type="password" required value={authPassword} onChange={e=>setAuthPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"/></div>
+            <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{authMode==='login'?'Sign In':'Create Account'}</button>
+          </form>
+          <div className="mt-6 text-center"><button onClick={()=>setAuthMode(authMode==='login'?'signup':'login')} className="text-sm font-medium text-blue-600 hover:text-blue-500">{authMode==='login'?'Need an account? Register.':'Have an account? Sign in.'}</button></div>
+        </div>
+      </div>
+      {toast&&<div className="fixed bottom-4 right-4 z-50"><div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type==='error'?'bg-red-50 border-red-200 text-red-800':'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>{toast.type==='error'?<AlertCircle className="w-5 h-5"/>:<CheckCircle className="w-5 h-5"/>}<p className="text-sm font-medium">{toast.message}</p><button onClick={()=>setToast(null)}><X className="w-4 h-4 text-slate-400"/></button></div></div>}
+    </div>
+  );
+
+  // ── Main App ──────────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+
+      {/* HEADER */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={()=>setCurrentView('dashboard')}>
+              <div className="bg-slate-800 p-2 rounded-lg">{isRfi?<FileQuestion className="w-5 h-5 text-white"/>:<Layers className="w-5 h-5 text-white"/>}</div>
+              <div><h1 className="font-bold text-lg leading-tight text-slate-900">Bridge<span className="text-blue-600">Sync</span></h1><p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Engineering Hub</p></div>
+            </div>
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 ml-4">
+              <button onClick={()=>{setActiveModule('submittals');setCurrentView('dashboard');}} className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!isRfi&&currentView!=='projects'&&currentView!=='team'?'bg-white text-blue-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}><Layers className="w-4 h-4"/>Submittals</button>
+              <button onClick={()=>{setActiveModule('rfis');setCurrentView('dashboard');}} className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${isRfi&&currentView!=='projects'&&currentView!=='team'?'bg-white text-blue-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}><FileQuestion className="w-4 h-4"/>RFIs</button>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <button onClick={()=>setCurrentView('projects')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 text-slate-600 ${currentView==='projects'?'bg-slate-100 text-blue-600':''}`}><Briefcase className="w-4 h-4"/>Projects</button>
+            <button onClick={()=>setCurrentView('team')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 text-slate-600 ${currentView==='team'?'bg-slate-100 text-blue-600':''}`}><UsersIcon className="w-4 h-4"/>Team</button>
+            <button onClick={()=>setCurrentView('intake')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm"><Plus className="w-4 h-4"/>Log {termModule}</button>
+            <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
+              <div className="text-right hidden sm:block"><p className="text-xs font-bold text-slate-900">{activeUserRole.name}</p><p className="text-[10px] text-slate-500 uppercase tracking-wider">{user.email}</p></div>
+              <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><LogOut className="w-5 h-5"/></button>
+            </div>
           </div>
         </div>
-      );
+      </header>
 
-      if (!user) return (
-        <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-          <div className="sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="flex justify-center"><div className="bg-slate-800 p-3 rounded-xl shadow-lg"><Layers className="w-8 h-8 text-white" /></div></div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">Bridge<span className="text-blue-600">Sync</span> Engineering</h2>
-            <p className="mt-2 text-center text-sm text-slate-600">{authMode === 'login' ? 'Sign in to access secure project records' : 'Register a new engineering account'}</p>
-          </div>
-          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200">
-              <form className="space-y-6" onSubmit={handleAuthSubmit}>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Email</label>
-                  <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">Password</label>
-                  <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
-                </div>
-                <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                  {authMode === 'login' ? 'Sign In' : 'Create Account'}
-                </button>
-              </form>
-              <div className="mt-6 text-center">
-                <button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                  {authMode === 'login' ? 'Need an account? Register here.' : 'Already have an account? Sign in.'}
-                </button>
-              </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* ── PROJECTS ── */}
+        {currentView==='projects'&&(
+          <div className="space-y-6 max-w-5xl mx-auto">
+            <div className="flex items-center gap-3 border-b border-slate-200 pb-4"><div className="bg-slate-800 p-2 rounded-lg"><Briefcase className="w-6 h-6 text-white"/></div><div><h2 className="text-2xl font-bold text-slate-900">Project Administration</h2><p className="text-sm text-slate-500">Manage active bridge contracts.</p></div></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1"><div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{isEditingProj?'Edit Project':'New Project'}</h3><form onSubmit={handleProjectSubmit} className="space-y-4"><div><label className="block text-xs font-medium text-slate-500 mb-1">Contract / Project Name</label><input type="text" required placeholder="e.g. I-95 Viaduct Replacement" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={projForm.name} onChange={e=>setProjForm({...projForm,name:e.target.value})}/></div><div><label className="block text-xs font-medium text-slate-500 mb-1">Client / Owner</label><input type="text" required placeholder="e.g. State DOT" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={projForm.client} onChange={e=>setProjForm({...projForm,client:e.target.value})}/></div><div className="flex justify-end gap-2 pt-4">{isEditingProj&&<button type="button" onClick={()=>{setIsEditingProj(false);setProjForm({id:'',name:'',client:''});}} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>}<button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700">{isEditingProj?'Update':'Create Project'}</button></div></form></div></div>
+              <div className="lg:col-span-2"><div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"><table className="w-full text-left border-collapse"><thead><tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><th className="p-4 font-semibold">Project</th><th className="p-4 font-semibold">Client</th><th className="p-4 font-semibold text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{projects.length===0?<tr><td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">No projects configured.</td></tr>:projects.map(p=>(<tr key={p.id} className="hover:bg-slate-50"><td className="p-4"><div className="font-bold text-slate-900">{p.name}</div><div className="text-xs text-slate-500 font-mono">ID: {p.id}</div></td><td className="p-4 text-sm font-medium text-slate-700">{p.client}</td><td className="p-4 text-right"><div className="flex items-center justify-end gap-2"><button onClick={()=>{setProjForm({id:p.id,name:p.name,client:p.client});setIsEditingProj(true);}} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-4 h-4"/></button><button onClick={()=>{if(window.confirm(`Remove "${p.name}"?`))handleDeleteProject(p.id);}} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4"/></button></div></td></tr>))}</tbody></table></div></div>
             </div>
           </div>
-          {toast && (
-            <div className="fixed bottom-4 right-4 z-50">
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type==='error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
-                {toast.type==='error' ? <AlertCircle className="w-5 h-5"/> : <CheckCircle className="w-5 h-5"/>}
-                <p className="text-sm font-medium">{toast.message}</p>
-                <button onClick={() => setToast(null)}><X className="w-4 h-4 text-slate-400"/></button>
+        )}
+
+        {/* ── TEAM ── */}
+        {currentView==='team'&&(
+          <div className="space-y-6 max-w-6xl mx-auto">
+            <div className="flex items-center gap-3 border-b border-slate-200 pb-4"><div className="bg-slate-800 p-2 rounded-lg"><UsersIcon className="w-6 h-6 text-white"/></div><div><h2 className="text-2xl font-bold text-slate-900">Team Management</h2><p className="text-sm text-slate-500">Add members to populate routing dropdowns. <span className="font-semibold text-blue-600">Email must match the login email</span> so the member's name is used consistently.</p></div></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1"><div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{isEditingTeam?'Edit Member':'Add Team Member'}</h3><form onSubmit={handleTeamSubmit} className="space-y-4"><div><label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label><input type="text" required placeholder="e.g. Sarah Jenkins" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.name} onChange={e=>setTeamForm({...teamForm,name:e.target.value})}/></div><div><label className="block text-xs font-medium text-slate-500 mb-1">Login Email</label><input type="email" required placeholder="e.g. sjenkins@firm.com" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.email} onChange={e=>setTeamForm({...teamForm,email:e.target.value})}/></div><div><label className="block text-xs font-medium text-slate-500 mb-1">Role</label><input type="text" placeholder="e.g. Structural Engineer" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.role} onChange={e=>setTeamForm({...teamForm,role:e.target.value})}/></div><div className="flex justify-end gap-2 pt-4">{isEditingTeam&&<button type="button" onClick={()=>{setIsEditingTeam(false);setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'});}} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>}<button type="submit" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"><UserPlus className="w-4 h-4"/>{isEditingTeam?'Update':'Add to Registry'}</button></div></form></div></div>
+              <div className="lg:col-span-2"><div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"><table className="w-full text-left border-collapse"><thead><tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><th className="p-4 font-semibold">Engineer</th><th className="p-4 font-semibold">Email / Role</th><th className="p-4 font-semibold text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{teamMembers.length===0?<tr><td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">No team members configured.</td></tr>:teamMembers.map(m=>(<tr key={m.id} className="hover:bg-slate-50"><td className="p-4"><div className="font-bold text-slate-900">{m.name}</div><div className="text-xs text-slate-500">{m.role}</div></td><td className="p-4 text-sm text-slate-700">{m.email}</td><td className="p-4 text-right"><div className="flex items-center justify-end gap-2"><button onClick={()=>{setTeamForm({id:m.id,name:m.name,email:m.email,role:m.role});setIsEditingTeam(true);}} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-4 h-4"/></button><button onClick={()=>{if(window.confirm(`Remove "${m.name}"?`))handleDeleteTeamMember(m.id);}} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4"/></button></div></td></tr>))}</tbody></table></div></div>
+            </div>
+          </div>
+        )}
+
+        {/* ── DASHBOARD ── */}
+        {currentView==='dashboard'&&(
+          <div className="space-y-5">
+            {/* Title row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-2xl font-bold text-slate-900">{termModule} Register</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="relative"><Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"/><input type="text" placeholder="Search titles or projects..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-56 focus:ring-2 focus:ring-blue-500 outline-none" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/></div>
+                {/* Filter toggle */}
+                <button onClick={()=>setShowFilters(f=>!f)} className={`relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border transition-colors ${showFilters||activeFilterCount>0?'bg-blue-50 border-blue-300 text-blue-700':'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'}`}>
+                  <FilterIcon className="w-4 h-4"/>Filters
+                  {activeFilterCount>0&&<span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-blue-600 text-white rounded-full text-[10px] flex items-center justify-center font-bold">{activeFilterCount}</span>}
+                </button>
+                <button onClick={()=>setCurrentView('analytics')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-sm font-medium shadow-sm"><BarChart2 className="w-4 h-4"/>Analytics</button>
+                <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium shadow-sm"><Download className="w-4 h-4"/>Export CSV</button>
               </div>
             </div>
-          )}
-        </div>
-      );
 
-      // ── Main App ───────────────────────────────────────────────────────────────
-      return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-
-          <datalist id="user-list">
-            {allUserOptions.map(n => <option key={n} value={n} />)}
-          </datalist>
-
-          {/* HEADER */}
-          <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
-                  <div className="bg-slate-800 p-2 rounded-lg">{isRfi ? <FileQuestion className="w-5 h-5 text-white"/> : <Layers className="w-5 h-5 text-white"/>}</div>
-                  <div>
-                    <h1 className="font-bold text-lg leading-tight text-slate-900">Bridge<span className="text-blue-600">Sync</span></h1>
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Engineering Hub</p>
+            {/* ── NEW: Filter panel ── */}
+            {showFilters&&(
+              <div className="bg-white border border-blue-200 rounded-xl p-4 shadow-sm grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Project</label>
+                  <select className="w-full border border-slate-300 rounded-md p-1.5 text-sm focus:ring-blue-500 outline-none bg-white" value={filterProject} onChange={e=>setFilterProject(e.target.value)}>
+                    <option value="">All Projects</option>
+                    {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Internal Status</label>
+                  <select className="w-full border border-slate-300 rounded-md p-1.5 text-sm focus:ring-blue-500 outline-none bg-white" value={filterInternalStatus} onChange={e=>setFilterInternalStatus(e.target.value)}>
+                    <option value="">All</option>
+                    {INTERNAL_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Official Status</label>
+                  <select className="w-full border border-slate-300 rounded-md p-1.5 text-sm focus:ring-blue-500 outline-none bg-white" value={filterExternalStatus} onChange={e=>setFilterExternalStatus(e.target.value)}>
+                    <option value="">All</option>
+                    {STATUSES[activeModule].map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Assignee</label>
+                  <select className="w-full border border-slate-300 rounded-md p-1.5 text-sm focus:ring-blue-500 outline-none bg-white" value={filterAssignee} onChange={e=>setFilterAssignee(e.target.value)}>
+                    <option value="">All</option>
+                    {allUserOptions.map(n=><option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col justify-between">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">SLA State</label>
+                  <select className="w-full border border-slate-300 rounded-md p-1.5 text-sm focus:ring-blue-500 outline-none bg-white" value={filterSla} onChange={e=>setFilterSla(e.target.value)}>
+                    <option value="">All</option>
+                    <option value="on-track">On Track</option>
+                    <option value="at-risk">At Risk</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </div>
+                {activeFilterCount>0&&(
+                  <div className="col-span-full flex justify-end">
+                    <button onClick={()=>{setFilterProject('');setFilterInternalStatus('');setFilterExternalStatus('');setFilterAssignee('');setFilterSla('');}} className="text-xs font-medium text-red-600 hover:text-red-800 flex items-center gap-1"><X className="w-3 h-3"/>Clear all filters</button>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 ml-4">
-                  <button onClick={() => { setActiveModule('submittals'); setCurrentView('dashboard'); }}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!isRfi && currentView!=='projects' && currentView!=='team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                    <Layers className="w-4 h-4"/> Submittals
-                  </button>
-                  <button onClick={() => { setActiveModule('rfis'); setCurrentView('dashboard'); }}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${isRfi && currentView!=='projects' && currentView!=='team' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                    <FileQuestion className="w-4 h-4"/> RFIs
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <button onClick={() => setCurrentView('projects')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 text-slate-600 ${currentView==='projects' ? 'bg-slate-100 text-blue-600' : ''}`}>
-                  <Briefcase className="w-4 h-4"/> Projects
-                </button>
-                <button onClick={() => setCurrentView('team')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-slate-100 text-slate-600 ${currentView==='team' ? 'bg-slate-100 text-blue-600' : ''}`}>
-                  <UsersIcon className="w-4 h-4"/> Team
-                </button>
-                <button onClick={() => setCurrentView('intake')} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm">
-                  <Plus className="w-4 h-4"/> Log {termModule}
-                </button>
-                <div className="flex items-center gap-3 border-l border-slate-200 pl-4">
-                  <div className="text-right hidden sm:block">
-                    {/* FIX #1 — shows resolved name, not always raw email */}
-                    <p className="text-xs font-bold text-slate-900">{activeUserRole.name}</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">{user.email}</p>
-                  </div>
-                  <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Sign Out">
-                    <LogOut className="w-5 h-5"/>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-            {/* ── PROJECTS ── */}
-            {currentView === 'projects' && (
-              <div className="space-y-6 max-w-5xl mx-auto">
-                <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
-                  <div className="bg-slate-800 p-2 rounded-lg"><Briefcase className="w-6 h-6 text-white"/></div>
-                  <div><h2 className="text-2xl font-bold text-slate-900">Project Administration</h2><p className="text-sm text-slate-500">Manage active bridge contracts and system metadata.</p></div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div className="lg:col-span-1">
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{isEditingProj ? 'Edit Project' : 'New Project'}</h3>
-                      <form onSubmit={handleProjectSubmit} className="space-y-4">
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Contract / Project Name</label><input type="text" required placeholder="e.g. I-95 Viaduct Replacement" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={projForm.name} onChange={e => setProjForm({...projForm, name: e.target.value})} /></div>
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Client / Owner</label><input type="text" required placeholder="e.g. State DOT" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={projForm.client} onChange={e => setProjForm({...projForm, client: e.target.value})} /></div>
-                        <div className="flex justify-end gap-2 pt-4">
-                          {isEditingProj && <button type="button" onClick={() => { setIsEditingProj(false); setProjForm({id:'',name:'',client:''}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>}
-                          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">{isEditingProj ? 'Update' : 'Create Project'}</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                  <div className="lg:col-span-2">
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                      <table className="w-full text-left border-collapse">
-                        <thead><tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><th className="p-4 font-semibold">Project</th><th className="p-4 font-semibold">Client</th><th className="p-4 font-semibold text-right">Actions</th></tr></thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {projects.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">No projects configured.</td></tr> :
-                            projects.map(p => (
-                              <tr key={p.id} className="hover:bg-slate-50">
-                                <td className="p-4"><div className="font-bold text-slate-900">{p.name}</div><div className="text-xs text-slate-500 font-mono">ID: {p.id}</div></td>
-                                <td className="p-4 text-sm font-medium text-slate-700">{p.client}</td>
-                                <td className="p-4 text-right"><div className="flex items-center justify-end gap-2">
-                                  <button onClick={() => { setProjForm({id:p.id,name:p.name,client:p.client}); setIsEditingProj(true); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-4 h-4"/></button>
-                                  <button onClick={() => { if(window.confirm(`Remove "${p.name}"?`)) handleDeleteProject(p.id); }} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4"/></button>
-                                </div></td>
-                              </tr>
-                            ))
-                          }
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
-            {/* ── TEAM ── */}
-            {currentView === 'team' && (
-              <div className="space-y-6 max-w-6xl mx-auto">
-                <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
-                  <div className="bg-slate-800 p-2 rounded-lg"><UsersIcon className="w-6 h-6 text-white"/></div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Team Management</h2>
-                    {/* Inform the user of the email-matching behaviour */}
-                    <p className="text-sm text-slate-500">Add members here to populate routing dropdowns. <span className="font-semibold text-blue-600">Email must match the login email</span> so the member's name is used consistently in assignments and My Queue.</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div className="lg:col-span-1">
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                      <h3 className="font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{isEditingTeam ? 'Edit Member' : 'Add Team Member'}</h3>
-                      <form onSubmit={handleTeamSubmit} className="space-y-4">
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Full Name</label><input type="text" required placeholder="e.g. Sarah Jenkins" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.name} onChange={e => setTeamForm({...teamForm, name: e.target.value})} /></div>
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Login Email</label><input type="email" required placeholder="e.g. sjenkins@firm.com" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.email} onChange={e => setTeamForm({...teamForm, email: e.target.value})} /></div>
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Role</label><input type="text" placeholder="e.g. Structural Engineer" className="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={teamForm.role} onChange={e => setTeamForm({...teamForm, role: e.target.value})} /></div>
-                        <div className="flex justify-end gap-2 pt-4">
-                          {isEditingTeam && <button type="button" onClick={() => { setIsEditingTeam(false); setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'}); }} className="px-4 py-2 border border-slate-300 rounded text-sm font-medium text-slate-600 hover:bg-slate-50">Cancel</button>}
-                          <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">
-                            <UserPlus className="w-4 h-4"/>{isEditingTeam ? 'Update' : 'Add to Registry'}
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                  <div className="lg:col-span-2">
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                      <table className="w-full text-left border-collapse">
-                        <thead><tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500"><th className="p-4 font-semibold">Engineer</th><th className="p-4 font-semibold">Email / Role</th><th className="p-4 font-semibold text-right">Actions</th></tr></thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {teamMembers.length === 0 ? <tr><td colSpan="3" className="p-8 text-center text-sm text-slate-500 italic">No team members configured.</td></tr> :
-                            teamMembers.map(m => (
-                              <tr key={m.id} className="hover:bg-slate-50">
-                                <td className="p-4"><div className="font-bold text-slate-900">{m.name}</div><div className="text-xs text-slate-500">{m.role}</div></td>
-                                <td className="p-4 text-sm text-slate-700">{m.email}</td>
-                                <td className="p-4 text-right"><div className="flex items-center justify-end gap-2">
-                                  <button onClick={() => { setTeamForm({id:m.id,name:m.name,email:m.email,role:m.role}); setIsEditingTeam(true); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-4 h-4"/></button>
-                                  <button onClick={() => { if(window.confirm(`Remove "${m.name}"?`)) handleDeleteTeamMember(m.id); }} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-4 h-4"/></button>
-                                </div></td>
-                              </tr>
-                            ))
-                          }
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* ── NEW: SLA Stoplight bar ── */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                {label:'On Track',key:'onTrack',color:'emerald',desc:'> 3 days remaining'},
+                {label:'At Risk',key:'atRisk',color:'amber',desc:'0–3 days remaining'},
+                {label:'Overdue',key:'overdue',color:'red',desc:'Past due date'},
+              ].map(({label,key,color,desc})=>(
+                <button key={key} onClick={()=>setFilterSla(filterSla===({onTrack:'on-track',atRisk:'at-risk',overdue:'overdue'}[key])?'':({onTrack:'on-track',atRisk:'at-risk',overdue:'overdue'}[key]))}
+                  className={`rounded-xl p-4 border-2 text-left transition-all shadow-sm hover:shadow-md ${filterSla===({onTrack:'on-track',atRisk:'at-risk',overdue:'overdue'}[key])?`border-${color}-400 bg-${color}-50`:`border-${color}-200 bg-${color}-50/40 hover:border-${color}-300`}`}>
+                  <div className={`text-3xl font-extrabold text-${color}-600`}>{slaCounts[key]}</div>
+                  <div className={`text-sm font-bold text-${color}-700 mt-0.5`}>{label}</div>
+                  <div className={`text-xs text-${color}-500 mt-0.5`}>{desc}</div>
+                </button>
+              ))}
+            </div>
 
-            {/* ── DASHBOARD ── */}
-            {currentView === 'dashboard' && (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h2 className="text-2xl font-bold text-slate-900">{termModule} Register</h2>
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"/>
-                      <input type="text" placeholder="Search titles or projects..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                    </div>
-                    <button onClick={() => setCurrentView('analytics')} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-md text-sm font-medium shadow-sm"><BarChart2 className="w-4 h-4"/> Analytics</button>
-                    <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium shadow-sm"><Download className="w-4 h-4"/> Export CSV</button>
-                  </div>
-                </div>
+            {/* Tabs */}
+            <div className="flex gap-4 border-b border-slate-200">
+              {['my-queue','all'].map(tab=>(
+                <button key={tab} onClick={()=>setDashboardTab(tab)} className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab===tab?'border-blue-600 text-blue-600':'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                  {tab==='my-queue'?`My Queue (${activeRecords.filter(s=>s.assignedTo===activeUserRole.name&&s.internalStatus!=='Sent Out').length})`:`All Active ${isRfi?'RFIs':'Submittals'}`}
+                </button>
+              ))}
+            </div>
 
-                <div className="flex gap-4 border-b border-slate-200">
-                  {['my-queue','all'].map(tab => (
-                    <button key={tab} onClick={() => setDashboardTab(tab)}
-                      className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab===tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-                      {tab==='my-queue' ? `My Queue (${activeRecords.filter(s => s.assignedTo===activeUserRole.name && s.internalStatus!=='Sent Out').length})` : `All Active ${isRfi?'RFIs':'Submittals'}`}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                  {loadingData ? (
-                    <div className="p-8 text-center text-slate-500">Loading {activeModule}...</div>
-                  ) : filteredRecords.length === 0 ? (
-                    <div className="p-12 text-center flex flex-col items-center">
-                      <CheckCircle className="w-12 h-12 text-green-500 mb-3 opacity-50"/>
-                      <h3 className="text-lg font-medium text-slate-900">All caught up!</h3>
-                      <p className="text-slate-500 text-sm mt-1">No active items found in this view.</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                            <th className="p-4 font-semibold">{termModule} Info</th>
-                            <th className="p-4 font-semibold">Project</th>
-                            <th className="p-4 font-semibold">Timeline & SLA</th>
-                            <th className="p-4 font-semibold">Routing Status</th>
-                            <th className="p-4 font-semibold">Aging</th>
-                            <th className="p-4 font-semibold text-right">Action</th>
+            {/* Table */}
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              {loadingData?<div className="p-8 text-center text-slate-500">Loading {activeModule}...</div>:filteredRecords.length===0?(
+                <div className="p-12 text-center flex flex-col items-center"><CheckCircle className="w-12 h-12 text-green-500 mb-3 opacity-50"/><h3 className="text-lg font-medium text-slate-900">All caught up!</h3><p className="text-slate-500 text-sm mt-1">No items match the current filters.</p></div>
+              ):(
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                        <SortTh label={`${termModule} Info`} field="title" sortField={sortField} sortDir={sortDir} onSort={handleSort}/>
+                        <th className="p-4 font-semibold">Project</th>
+                        <SortTh label="Timeline & SLA" field="dueDate" sortField={sortField} sortDir={sortDir} onSort={handleSort}/>
+                        <th className="p-4 font-semibold">Routing / BIC</th>
+                        <SortTh label="Aging" field="dateReceived" sortField={sortField} sortDir={sortDir} onSort={handleSort}/>
+                        <th className="p-4 font-semibold text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {treeRecords.map(sub=>{
+                        if(sub.isVirtual) return(
+                          <tr key={sub.id} className="bg-slate-200/50 border-t-2 border-slate-300">
+                            <td className="p-3 pl-4"><div className="font-extrabold text-slate-900">{sub.title}</div><div className="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">{termModule} Thread • {sub.itemCount} Record{sub.itemCount>1?'s':''}</div></td>
+                            <td className="p-3"><div className="text-sm font-bold text-slate-800">{sub.projectName}</div><div className="text-xs text-slate-600">{sub.contractor}</div></td>
+                            <td colSpan="4"></td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {treeRecords.map(sub => {
-                            if (sub.isVirtual) return (
-                              <tr key={sub.id} className="bg-slate-200/50 border-t-2 border-slate-300">
-                                <td className="p-3 pl-4"><div className="font-extrabold text-slate-900">{sub.title}</div><div className="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">{termModule} Thread • {sub.itemCount} Record{sub.itemCount>1?'s':''}</div></td>
-                                <td className="p-3"><div className="text-sm font-bold text-slate-800">{sub.projectName}</div><div className="text-xs text-slate-600">{sub.contractor}</div></td>
-                                <td colSpan="4"></td>
-                              </tr>
-                            );
-                            const daysElapsed   = Math.floor((Date.now()-new Date(sub.dateReceived).getTime())/86400000);
-                            const daysRemaining = (sub.slaDays||14) - daysElapsed;
-                            const isLate        = daysRemaining < 0;
-                            return (
-                              <tr key={sub.id} className="hover:bg-slate-50 transition-colors group">
-                                <td className="p-4">
-                                  <div className="flex items-start gap-2" style={{paddingLeft:`${sub.indentLevel*1.5}rem`}}>
-                                    {sub.indentLevel>0 && <CornerDownRight className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0"/>}
-                                    <div>
-                                      <div className="font-bold text-slate-900">{sub.title}</div>
-                                      {sub.subtitle && <div className="text-sm text-slate-600 mb-0.5">{sub.subtitle}</div>}
-                                      <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                                        <span>ID: {sub.id} • {termRev} {sub.revision}</span>
-                                        {sub.relatedDocs && <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 rounded"><LinkIcon className="w-3 h-3"/>{sub.relatedDocs}</span>}
-                                      </div>
-                                      {(sub.tags?.components?.length>0 || sub.tags?.disciplines?.length>0) && (
-                                        <div className="flex flex-wrap gap-1 mt-2">
-                                          {sub.tags.components?.map((t,i) => <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"><Tag className="w-3 h-3"/>{t}</span>)}
-                                          {sub.tags.disciplines?.map((t,i) => <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-100">{t}</span>)}
-                                        </div>
-                                      )}
-                                      <div className="text-[10px] text-slate-400 mt-1.5 font-medium">Logged by: {sub.loggedBy||'System Legacy'}</div>
-                                    </div>
+                        );
+                        const de=Math.floor((Date.now()-new Date(sub.dateReceived).getTime())/86400000);
+                        const dr=(sub.slaDays||14)-de;
+                        const isLate=dr<0;
+                        const bic=sub.ballInCourt||'—';
+                        return(
+                          <tr key={sub.id} className="hover:bg-slate-50 transition-colors group">
+                            <td className="p-4">
+                              <div className="flex items-start gap-2" style={{paddingLeft:`${sub.indentLevel*1.5}rem`}}>
+                                {sub.indentLevel>0&&<CornerDownRight className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0"/>}
+                                <div>
+                                  <div className="font-bold text-slate-900">{sub.title}</div>
+                                  {sub.subtitle&&<div className="text-sm text-slate-600 mb-0.5">{sub.subtitle}</div>}
+                                  <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                                    <span>ID: {sub.id} • {termRev} {sub.revision}</span>
+                                    {sub.relatedDocs&&<span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 rounded"><LinkIcon className="w-3 h-3"/>{sub.relatedDocs}</span>}
                                   </div>
-                                </td>
-                                <td className="p-4"><div className="text-sm font-medium text-slate-800">{sub.projectName}</div><div className="text-xs text-slate-500 mt-0.5">{sub.contractor}</div></td>
-                                <td className="p-4">
-                                  <div className="text-xs text-slate-600 space-y-1">
-                                    <div><span className="text-slate-400 w-16 inline-block">Received:</span><span className="font-medium text-slate-800"> {new Date(sub.dateReceived).toLocaleDateString()}</span></div>
-                                    <div><span className="text-slate-400 w-16 inline-block">SLA:</span><span className="font-medium text-slate-800"> {sub.slaDays} Days</span></div>
-                                    <div><span className="text-slate-400 w-16 inline-block">Due:</span><span className={`font-medium ${isLate?'text-red-600':'text-slate-800'}`}> {new Date(sub.dueDate).toLocaleDateString()}</span></div>
-                                  </div>
-                                </td>
-                                <td className="p-4 space-y-2">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${sub.internalStatus==='Sent Out'?'bg-green-50 text-green-700 border-green-200':sub.internalStatus==='In Review'?'bg-blue-50 text-blue-700 border-blue-200':sub.internalStatus==='Ready for PM Approval'?'bg-purple-50 text-purple-700 border-purple-200':'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                                    {sub.internalStatus}
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 flex-shrink-0">{(sub.assignedTo||'U').charAt(0).toUpperCase()}</div>
-                                    <span className="text-xs text-slate-700 truncate max-w-[120px]">{sub.assignedTo||'Unassigned'}</span>
-                                  </div>
-                                </td>
-                                <td className="p-4">
-                                  <div className={`flex items-center gap-1.5 text-sm font-medium ${isLate?'text-red-600':'text-slate-600'}`}><Clock className="w-4 h-4"/>{daysElapsed} d Elapsed</div>
-                                  <div className={`text-xs mt-1 font-semibold ${isLate?'text-red-500':daysRemaining<=3?'text-amber-500':'text-emerald-600'}`}>
-                                    {isLate ? `${Math.abs(daysRemaining)} d Overdue` : `${daysRemaining} d Remaining`}
-                                  </div>
-                                </td>
-                                <td className="p-4 text-right">
-                                  <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => setQuickCommentModal(sub)} className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 transition-colors" title="Quick Comment">
-                                      <MessageSquare className="w-4 h-4"/>
-                                      {sub.comments?.length>0 && <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">{sub.comments.length}</span>}
-                                    </button>
-                                    <button onClick={() => { setActiveRecordItem(sub); setCurrentView('detail'); }} className="text-sm font-medium text-blue-600 hover:text-blue-800">Open Review</button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── INTAKE ── */}
-            {currentView === 'intake' && (
-              <div className="max-w-2xl mx-auto">
-                <button onClick={() => setCurrentView('dashboard')} disabled={isUploading} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6"><ArrowLeft className="w-4 h-4"/> Back to Dashboard</button>
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
-                  <div className="flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
-                    <div className="bg-blue-100 p-2 rounded-lg"><FilePlus className="w-6 h-6 text-blue-600"/></div>
-                    <div><h2 className="text-xl font-bold text-slate-900">Ingest {termModule}</h2><p className="text-sm text-slate-500">Log and upload an incoming {activeModule.slice(0,-1)} package.</p></div>
-                  </div>
-                  {projects.length === 0 ? (
-                    <div className="p-8 text-center border-2 border-dashed border-amber-200 rounded-xl bg-amber-50">
-                      <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-3"/>
-                      <h3 className="font-bold text-amber-800 mb-1">Configuration Required</h3>
-                      <p className="text-sm text-amber-700 mb-4">Initialize at least one project before logging.</p>
-                      <button onClick={() => setCurrentView('projects')} className="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium hover:bg-amber-700">Go to Project Administration</button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleIntakeSubmit} className="space-y-6">
-                      <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
-                        {['new','revision'].map(t => (
-                          <button key={t} type="button"
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType===t?'bg-white shadow-sm text-blue-600':'text-slate-500 hover:text-slate-700'}`}
-                            onClick={() => { setIntakeType(t); if(t==='new'){setIntakeBaseId('');setIntakeTitle('');setIntakeContractor('');setIntakeRevision(0);} }}>
-                            {t==='new' ? `New ${termModule}` : 'Revision to Existing'}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
-                          <select required className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" value={intakeProject} onChange={e => { setIntakeProject(e.target.value); setIntakeBaseId(''); }}>
-                            <option value="">Select a project...</option>
-                            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                          </select>
-                        </div>
-                        {intakeType==='revision' && (
-                          <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Select Base {termModule}</label>
-                            <select required className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" value={intakeBaseId} onChange={e => setIntakeBaseId(e.target.value)} disabled={!intakeProject}>
-                              <option value="">{intakeProject ? `Select a ${termModule}...` : 'Select a project first...'}</option>
-                              {activeRecords.filter(s => s.projectId===intakeProject).map(s => <option key={s.id} value={s.id}>{s.id} – {termRev} {s.revision}: {s.title}</option>)}
-                            </select>
-                          </div>
-                        )}
-                        <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">{isRfi?'RFI Question / Title':'Submittal Title'}</label>
-                          <input type="text" name="title" required placeholder={isRfi?'e.g. Discrepancy at Pier 2':'e.g. Abutment 1 Concrete Mix Design'} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeTitle} onChange={e => setIntakeTitle(e.target.value)} />
-                        </div>
-                        <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">{termSubtitle}</label>
-                          <input type="text" name="subtitle" placeholder={isRfi?'e.g. Contractor proposes field welding.':'e.g. Spec Section 550'} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeSubtitle} onChange={e => setIntakeSubtitle(e.target.value)} />
-                        </div>
-                        <div className="col-span-2 border-t border-slate-100 pt-4">
-                          <label className="block text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-600"/>Plan Sheets & Related Docs</label>
-                          <input type="text" placeholder="e.g. Sheet S-104, RFI-0042" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/30" value={intakeRelatedDocs} onChange={e => setIntakeRelatedDocs(e.target.value)} />
-                          <p className="text-xs text-slate-500 mt-1">Cross-reference contract drawings for legal traceability.</p>
-                        </div>
-                        <div><label className="block text-sm font-medium text-slate-700 mb-1">Contractor / Sub</label><input type="text" name="contractor" required placeholder="e.g. Apex Steel Corp" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeContractor} onChange={e => setIntakeContractor(e.target.value)} /></div>
-                        <div><label className="block text-sm font-medium text-slate-700 mb-1">{termRev}</label><input type="number" name="revision" required min="0" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeRevision} onChange={e => setIntakeRevision(Number(e.target.value))} /></div>
-                        <div><label className="block text-sm font-medium text-slate-700 mb-1">Review Period (Days)</label><input type="number" name="slaDays" required min="1" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeSlaDays} onChange={e => setIntakeSlaDays(Number(e.target.value))} /></div>
-                        <div className="col-span-2 border-t border-slate-100 pt-4">
-                          <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2"><Tag className="w-4 h-4"/>Metadata Tagging</h4>
-                          <div className="grid grid-cols-2 gap-6">
-                            <div><label className="block text-sm font-medium text-slate-700 mb-1">Components</label><input type="text" placeholder="e.g. Abutment 1, Pier 2" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" value={intakeComponents} onChange={e => setIntakeComponents(e.target.value)} /></div>
-                            <div><label className="block text-sm font-medium text-slate-700 mb-1">Disciplines</label><input type="text" placeholder="e.g. Structural Steel, Rebar" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none" value={intakeDisciplines} onChange={e => setIntakeDisciplines(e.target.value)} /></div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t border-slate-100 pt-6">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Upload Incoming PDF Package</label>
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md bg-slate-50 hover:bg-slate-100">
-                          <div className="space-y-1 text-center">
-                            <UploadCloud className="mx-auto h-12 w-12 text-slate-400"/>
-                            <div className="flex text-sm text-slate-600 justify-center">
-                              <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"><span>Select a file</span><input type="file" className="sr-only" accept="application/pdf" onChange={e => setIntakeFile(e.target.files[0])}/></label>
-                              <p className="pl-1">or drag and drop</p>
-                            </div>
-                            <p className="text-xs text-slate-500 font-bold mt-2">{intakeFile ? `Selected: ${intakeFile.name}` : 'PDF up to 50MB'}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t border-slate-100 pt-6">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Initial Assignment</label>
-                        {/* Default to current user's resolved name */}
-                        <select name="assignedTo" defaultValue={activeUserRole.name} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                          {allUserOptions.map(n => <option key={n} value={n}>{n}</option>)}
-                        </select>
-                      </div>
-                      <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                        <button type="button" onClick={() => setCurrentView('dashboard')} disabled={isUploading} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
-                        <button type="submit" disabled={isUploading} className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50">
-                          {isUploading ? <><UploadCloud className="w-4 h-4 animate-bounce"/>{intakeFile?`Uploading (${uploadProgress}%)...`:'Processing...'}</> : `Log & Upload ${termModule}`}
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── DETAIL ── */}
-            {currentView === 'detail' && activeRecordItem && (
-              <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <button onClick={() => { setActiveRecordItem(null); setCurrentView('dashboard'); }} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800"><ArrowLeft className="w-4 h-4"/> Back to List</button>
-                    <button onClick={() => handleDeleteRecord(activeRecordItem.id)} className="flex items-center gap-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md"><Trash2 className="w-4 h-4"/> Delete</button>
-                  </div>
-
-                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                    {!isEditing ? (
-                      <>
-                        <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-2">
-                          <h3 className="font-bold text-slate-900">Properties</h3>
-                          <button onClick={() => { setEditFormData({ title:activeRecordItem.title, subtitle:activeRecordItem.subtitle||'', contractor:activeRecordItem.contractor, revision:activeRecordItem.revision, slaDays:activeRecordItem.slaDays, relatedDocs:activeRecordItem.relatedDocs||'' }); setIsEditing(true); }} className="text-slate-400 hover:text-blue-600 p-1"><Edit2 className="w-4 h-4"/></button>
-                        </div>
-                        <dl className="space-y-4 text-sm">
-                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termModule} ID</dt><dd className="font-medium text-slate-900">{activeRecordItem.id} ({termRev} {activeRecordItem.revision})</dd></div>
-                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Logged By</dt><dd className="font-medium text-slate-900">{activeRecordItem.loggedBy||'System Legacy'}</dd></div>
-                          {activeRecordItem.subtitle && <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termSubtitle}</dt><dd className="font-medium text-slate-900">{activeRecordItem.subtitle}</dd></div>}
-                          {activeRecordItem.relatedDocs && <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100"><dt className="text-blue-600 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/>Plan Sheets</dt><dd className="font-semibold text-slate-900">{activeRecordItem.relatedDocs}</dd></div>}
-                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Project</dt><dd className="font-medium text-slate-900">{activeRecordItem.projectName}</dd></div>
-                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Contractor</dt><dd className="font-medium text-slate-900">{activeRecordItem.contractor}</dd></div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Received</dt><dd className="font-medium text-slate-900">{new Date(activeRecordItem.dateReceived).toLocaleDateString()}</dd></div>
-                            <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">SLA</dt><dd className="font-medium text-slate-900">{activeRecordItem.slaDays} Days</dd></div>
-                          </div>
-                          <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Due Date</dt><dd className="font-medium text-slate-900">{new Date(activeRecordItem.dueDate).toLocaleDateString()}</dd></div>
-                        </dl>
-                      </>
-                    ) : (
-                      <form onSubmit={handleEditSubmit} className="space-y-4">
-                        <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Edit Properties</h3>
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Title</label><input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.title} onChange={e => setEditFormData({...editFormData, title:e.target.value})} /></div>
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">{termSubtitle}</label><input type="text" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.subtitle} onChange={e => setEditFormData({...editFormData, subtitle:e.target.value})} /></div>
-                        <div><label className="block text-xs font-medium text-blue-600 mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/>Plan Sheets / Refs</label><input type="text" className="w-full border border-blue-300 bg-blue-50/50 rounded p-1.5 text-sm" value={editFormData.relatedDocs} onChange={e => setEditFormData({...editFormData, relatedDocs:e.target.value})} /></div>
-                        <div><label className="block text-xs font-medium text-slate-500 mb-1">Contractor</label><input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.contractor} onChange={e => setEditFormData({...editFormData, contractor:e.target.value})} /></div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div><label className="block text-xs font-medium text-slate-500 mb-1">{termRev}</label><input type="number" required min="0" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.revision} onChange={e => setEditFormData({...editFormData, revision:e.target.value})} /></div>
-                          <div><label className="block text-xs font-medium text-slate-500 mb-1">SLA (Days)</label><input type="number" required min="1" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.slaDays} onChange={e => setEditFormData({...editFormData, slaDays:e.target.value})} /></div>
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                          <button type="button" onClick={() => setIsEditing(false)} className="px-3 py-1.5 border border-slate-300 rounded text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
-                          <button type="submit" className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">Save Changes</button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-
-                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
-                    <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Cloud Files</h3>
-                    <div className="space-y-3">
-                      {activeRecordItem.incomingPdfRef ? (
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
-                          <div className="flex items-center gap-2 overflow-hidden"><FileText className="w-5 h-5 text-blue-500 flex-shrink-0"/><div className="text-sm font-medium text-slate-700 truncate">{activeRecordItem.incomingFileName||'Incoming Package'}</div></div>
-                          <a href={activeRecordItem.incomingPdfRef} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md"><Download className="w-4 h-4"/></a>
-                        </div>
-                      ) : <p className="text-sm text-slate-500 italic">No incoming file uploaded.</p>}
-                      {activeRecordItem.outgoingPdfRef && (
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="flex items-center gap-2 overflow-hidden"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0"/><div className="text-sm font-medium text-green-800 truncate">{activeRecordItem.outgoingFileName||'Marked Up Final'}</div></div>
-                          <a href={activeRecordItem.outgoingPdfRef} target="_blank" rel="noreferrer" className="text-green-700 hover:text-green-900 bg-green-100 hover:bg-green-200 p-1.5 rounded-md"><Download className="w-4 h-4"/></a>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col h-96">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2"><MessageSquare className="w-4 h-4 text-slate-500"/><h3 className="font-bold text-slate-900">Discussion</h3></div>
-                    <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                      {(!activeRecordItem.comments || activeRecordItem.comments.length===0) ? (
-                        <p className="text-sm text-slate-400 text-center italic mt-4">No comments yet.</p>
-                      ) : activeRecordItem.comments.map(c => (
-                        <div key={c.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                          <div className="flex justify-between items-start mb-1"><span className="font-medium text-xs text-slate-800">{c.user}</span><span className="text-[10px] text-slate-400">{new Date(c.timestamp).toLocaleDateString()} {new Date(c.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
-                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{c.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <form onSubmit={handleAddComment} className="mt-auto relative">
-                      <textarea className="w-full border border-slate-300 rounded-lg p-3 pr-12 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="2" placeholder="Add a comment..." value={newComment} onChange={e => setNewComment(e.target.value)}
-                        onKeyDown={e => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleAddComment(e);} }}></textarea>
-                      <button type="submit" disabled={!newComment.trim()} className="absolute right-2 bottom-3 p-1.5 text-blue-600 hover:bg-blue-50 rounded-md disabled:opacity-50"><Send className="w-4 h-4"/></button>
-                    </form>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
-                    <div className="flex items-start justify-between mb-6">
-                      <div><h2 className="text-2xl font-bold text-slate-900">{activeRecordItem.title}</h2><p className="text-slate-500 mt-1">Review interface and routing controls</p></div>
-                      <div className={`px-3 py-1 rounded-full text-sm font-bold border ${(activeRecordItem.externalStatus||'').includes('Pending')?'bg-amber-50 text-amber-700 border-amber-200':(activeRecordItem.externalStatus||'').includes('Approved')||activeRecordItem.externalStatus==='Answered'||activeRecordItem.externalStatus==='Closed'?'bg-green-50 text-green-700 border-green-200':'bg-red-50 text-red-700 border-red-200'}`}>
-                        Official: {activeRecordItem.externalStatus||'Pending'}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-6">
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><UsersIcon className="w-4 h-4"/>Internal Routing</h4>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Assigned Engineer</label>
-                          <select
-                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none bg-white"
-                            value={assignedToInput}
-                            onChange={e => {
-                              setAssignedToInput(e.target.value);
-                              handleUpdateStatus(activeRecordItem.id, { assignedTo: e.target.value || 'Unassigned' });
-                            }}
-                          >
-                            {allUserOptions.map(n => <option key={n} value={n}>{n}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">QC Reviewer</label>
-                          <select
-                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none bg-white"
-                            value={qcReviewerInput}
-                            onChange={e => {
-                              setQcReviewerInput(e.target.value);
-                              handleUpdateStatus(activeRecordItem.id, { qcReviewer: e.target.value });
-                            }}
-                          >
-                            <option value="">— None —</option>
-                            {allUserOptions.filter(n => n !== 'Unassigned').map(n => <option key={n} value={n}>{n}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Internal Status</label>
-                          <select className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none" value={activeRecordItem.internalStatus||'Unassigned'} onChange={e => handleUpdateStatus(activeRecordItem.id, {internalStatus:e.target.value})}>
-                            {INTERNAL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/>Engineering Decision</h4>
-                        <div>
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Official {termModule} Status</label>
-                          <select className="w-full border border-amber-300 bg-amber-50 rounded-md p-2 text-sm focus:ring-amber-500 outline-none font-medium text-amber-900" value={activeRecordItem.externalStatus||'Pending'} onChange={e => handleUpdateStatus(activeRecordItem.id, {externalStatus:e.target.value})}>
-                            {STATUSES[activeModule].map(s => <option key={s} value={s}>{s}</option>)}
-                          </select>
-                        </div>
-                        <div className="pt-2">
-                          <label className="block text-xs font-medium text-slate-500 mb-1">Upload Redlined Response</label>
-                          <div className="flex items-center gap-2">
-                            <input type="file" accept="application/pdf" onChange={e => setOutgoingFile(e.target.files[0])} className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                            <button onClick={handleUploadOutgoingFile} disabled={!outgoingFile||isUploading} className="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-medium hover:bg-slate-900 disabled:opacity-50">
-                              {isUploading ? `Uploading (${uploadProgress}%)...` : 'Upload'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── ANALYTICS ── */}
-            {currentView === 'analytics' && (() => {
-              const active    = activeRecords.filter(s => s.internalStatus !== 'Sent Out');
-              const overdue   = active.filter(s => Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000) > (s.slaDays||14));
-              const avgAge    = active.length > 0 ? Math.round(active.reduce((acc,s) => acc + Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000), 0) / active.length) : 0;
-              const pctOverdue= active.length > 0 ? Math.round((overdue.length/active.length)*100) : 0;
-              const wMap = {};
-              active.forEach(s => { const a = s.assignedTo||'Unassigned'; wMap[a] = (wMap[a]||0)+1; });
-              const workload  = Object.entries(wMap).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
-              return (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
-                    <div className="bg-slate-800 p-2 rounded-lg"><BarChart2 className="w-6 h-6 text-white"/></div>
-                    <div><h2 className="text-2xl font-bold text-slate-900">Project Manager Analytics</h2><p className="text-sm text-slate-500">KPIs across active <span className="font-bold text-blue-600">{activeModule}</span>.</p></div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">Total Active</p><p className="text-3xl font-bold text-slate-900">{active.length}</p></div>
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-red-600 mb-1">Overdue</p><p className="text-3xl font-bold text-red-700">{overdue.length}</p></div>
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">Avg Aging (Days)</p><p className="text-3xl font-bold text-slate-900">{avgAge}</p></div>
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">% Exceeding SLA</p><p className="text-3xl font-bold text-slate-900">{pctOverdue}%</p></div>
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50"><h3 className="font-bold text-slate-800">Engineer Workload Distribution</h3></div>
-                    <div className="p-6 space-y-4">
-                      {workload.length === 0 ? <p className="text-sm text-slate-500 italic">No active assignments.</p> : workload.map(u => {
-                        const max = Math.max(...workload.map(w=>w.count),1);
-                        return (
-                          <div key={u.name}>
-                            <div className="flex justify-between text-sm mb-1"><span className="font-medium text-slate-700">{u.name}</span><span className="font-bold text-slate-900">{u.count} items</span></div>
-                            <div className="w-full bg-slate-100 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style={{width:`${(u.count/max)*100}%`}}></div></div>
-                          </div>
+                                  {(sub.tags?.components?.length>0||sub.tags?.disciplines?.length>0)&&<div className="flex flex-wrap gap-1 mt-2">{sub.tags.components?.map((t,i)=><span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"><Tag className="w-3 h-3"/>{t}</span>)}{sub.tags.disciplines?.map((t,i)=><span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-100">{t}</span>)}</div>}
+                                  <div className="text-[10px] text-slate-400 mt-1.5">Logged by: {sub.loggedBy||'System Legacy'}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4"><div className="text-sm font-medium text-slate-800">{sub.projectName}</div><div className="text-xs text-slate-500 mt-0.5">{sub.contractor}</div></td>
+                            <td className="p-4"><div className="text-xs text-slate-600 space-y-1"><div><span className="text-slate-400 w-16 inline-block">Received:</span><span className="font-medium text-slate-800"> {new Date(sub.dateReceived).toLocaleDateString()}</span></div><div><span className="text-slate-400 w-16 inline-block">SLA:</span><span className="font-medium text-slate-800"> {sub.slaDays} Days</span></div><div><span className="text-slate-400 w-16 inline-block">Due:</span><span className={`font-medium ${isLate?'text-red-600':'text-slate-800'}`}> {new Date(sub.dueDate).toLocaleDateString()}</span></div></div></td>
+                            <td className="p-4 space-y-2">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${sub.internalStatus==='Sent Out'?'bg-green-50 text-green-700 border-green-200':sub.internalStatus==='In Review'?'bg-blue-50 text-blue-700 border-blue-200':sub.internalStatus==='Ready for PM Approval'?'bg-purple-50 text-purple-700 border-purple-200':'bg-slate-100 text-slate-700 border-slate-200'}`}>{sub.internalStatus}</span>
+                              <div className="flex items-center gap-2"><div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 flex-shrink-0">{(sub.assignedTo||'U').charAt(0).toUpperCase()}</div><span className="text-xs text-slate-700 truncate max-w-[100px]">{sub.assignedTo||'Unassigned'}</span></div>
+                              {/* ── NEW: BIC badge ── */}
+                              <div className="flex items-center gap-1.5"><CircleDot className="w-3 h-3 text-slate-400"/><span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${BIC_COLORS[bic]||BIC_COLORS['—']}`}>{bic}</span></div>
+                            </td>
+                            <td className="p-4"><div className={`flex items-center gap-1.5 text-sm font-medium ${isLate?'text-red-600':'text-slate-600'}`}><Clock className="w-4 h-4"/>{de} d Elapsed</div><div className={`text-xs mt-1 font-semibold ${isLate?'text-red-500':dr<=3?'text-amber-500':'text-emerald-600'}`}>{isLate?`${Math.abs(dr)} d Overdue`:`${dr} d Remaining`}</div></td>
+                            <td className="p-4 text-right">
+                              <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={()=>setQuickCommentModal(sub)} className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 transition-colors"><MessageSquare className="w-4 h-4"/>{sub.comments?.length>0&&<span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">{sub.comments.length}</span>}</button>
+                                <button onClick={()=>{setActiveRecordItem(sub);setCurrentView('detail');}} className="text-sm font-medium text-blue-600 hover:text-blue-800">Open Review</button>
+                              </div>
+                            </td>
+                          </tr>
                         );
                       })}
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
-              );
-            })()}
-          </main>
+              )}
+            </div>
+          </div>
+        )}
 
-          {/* QUICK COMMENT MODAL */}
-          {quickCommentModal && (
-            <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                  <h3 className="font-bold text-slate-900 flex items-center gap-2"><MessageSquare className="w-4 h-4 text-blue-600"/>Quick Comment</h3>
-                  <button onClick={() => setQuickCommentModal(null)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600"/></button>
-                </div>
-                <div className="p-6">
-                  <div className="mb-4">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{termModule}</p>
-                    <p className="font-medium text-slate-900">{quickCommentModal.title}</p>
-                    <p className="text-xs text-slate-500">ID: {quickCommentModal.id} • {termRev} {quickCommentModal.revision}</p>
+        {/* ── INTAKE ── */}
+        {currentView==='intake'&&(
+          <div className="max-w-2xl mx-auto">
+            <button onClick={()=>setCurrentView('dashboard')} disabled={isUploading} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6"><ArrowLeft className="w-4 h-4"/>Back to Dashboard</button>
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+              <div className="flex items-center gap-3 mb-8 pb-6 border-b border-slate-100"><div className="bg-blue-100 p-2 rounded-lg"><FilePlus className="w-6 h-6 text-blue-600"/></div><div><h2 className="text-xl font-bold text-slate-900">Ingest {termModule}</h2><p className="text-sm text-slate-500">Log an incoming {activeModule.slice(0,-1)} package.</p></div></div>
+              {projects.length===0?(
+                <div className="p-8 text-center border-2 border-dashed border-amber-200 rounded-xl bg-amber-50"><AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-3"/><h3 className="font-bold text-amber-800 mb-1">Configuration Required</h3><p className="text-sm text-amber-700 mb-4">Initialize at least one project first.</p><button onClick={()=>setCurrentView('projects')} className="px-4 py-2 bg-amber-600 text-white rounded text-sm font-medium hover:bg-amber-700">Go to Project Administration</button></div>
+              ):(
+                <form onSubmit={handleIntakeSubmit} className="space-y-6">
+                  <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
+                    {['new','revision'].map(t=>(
+                      <button key={t} type="button" className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType===t?'bg-white shadow-sm text-blue-600':'text-slate-500 hover:text-slate-700'}`} onClick={()=>{setIntakeType(t);if(t==='new'){setIntakeBaseId('');setIntakeTitle('');setIntakeContractor('');setIntakeRevision(0);}}}>
+                        {t==='new'?`New ${termModule}`:'Revision to Existing'}
+                      </button>
+                    ))}
                   </div>
-                  <form onSubmit={handleQuickCommentSubmit}>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Your Note</label>
-                    <textarea autoFocus className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="4" placeholder="Type your comment here..." value={quickCommentText} onChange={e => setQuickCommentText(e.target.value)}></textarea>
-                    <div className="flex justify-end gap-3 mt-6">
-                      <button type="button" onClick={() => setQuickCommentModal(null)} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
-                      <button type="submit" disabled={!quickCommentText.trim()} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50">Save Comment</button>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Project</label><select required className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" value={intakeProject} onChange={e=>{setIntakeProject(e.target.value);setIntakeBaseId('');}}><option value="">Select a project...</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+                    {intakeType==='revision'&&<div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">Select Base {termModule}</label><select required className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50" value={intakeBaseId} onChange={e=>setIntakeBaseId(e.target.value)} disabled={!intakeProject}><option value="">{intakeProject?`Select a ${termModule}...`:'Select a project first...'}</option>{activeRecords.filter(s=>s.projectId===intakeProject).map(s=><option key={s.id} value={s.id}>{s.id} – {termRev} {s.revision}: {s.title}</option>)}</select></div>}
+                    <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">{isRfi?'RFI Question / Title':'Submittal Title'}</label><input type="text" name="title" required placeholder={isRfi?'e.g. Discrepancy at Pier 2':'e.g. Abutment 1 Concrete Mix Design'} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeTitle} onChange={e=>setIntakeTitle(e.target.value)}/></div>
+                    <div className="col-span-2"><label className="block text-sm font-medium text-slate-700 mb-1">{termSubtitle}</label><input type="text" name="subtitle" placeholder={isRfi?'e.g. Contractor proposes field welding.':'e.g. Spec Section 550'} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeSubtitle} onChange={e=>setIntakeSubtitle(e.target.value)}/></div>
+                    <div className="col-span-2 border-t border-slate-100 pt-4"><label className="block text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-600"/>Plan Sheets & Related Docs</label><input type="text" placeholder="e.g. Sheet S-104, RFI-0042" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/30" value={intakeRelatedDocs} onChange={e=>setIntakeRelatedDocs(e.target.value)}/></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Contractor / Sub</label><input type="text" name="contractor" required placeholder="e.g. Apex Steel Corp" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeContractor} onChange={e=>setIntakeContractor(e.target.value)}/></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">{termRev}</label><input type="number" name="revision" required min="0" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeRevision} onChange={e=>setIntakeRevision(Number(e.target.value))}/></div>
+                    <div><label className="block text-sm font-medium text-slate-700 mb-1">Review Period (Days)</label><input type="number" name="slaDays" required min="1" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={intakeSlaDays} onChange={e=>setIntakeSlaDays(Number(e.target.value))}/></div>
+                    <div className="col-span-2 border-t border-slate-100 pt-4"><h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2"><Tag className="w-4 h-4"/>Metadata Tagging</h4><div className="grid grid-cols-2 gap-6"><div><label className="block text-sm font-medium text-slate-700 mb-1">Components</label><input type="text" placeholder="e.g. Abutment 1, Pier 2" className="w-full border border-slate-300 rounded-md p-2.5 text-sm outline-none" value={intakeComponents} onChange={e=>setIntakeComponents(e.target.value)}/></div><div><label className="block text-sm font-medium text-slate-700 mb-1">Disciplines</label><input type="text" placeholder="e.g. Structural Steel, Rebar" className="w-full border border-slate-300 rounded-md p-2.5 text-sm outline-none" value={intakeDisciplines} onChange={e=>setIntakeDisciplines(e.target.value)}/></div></div></div>
+                  </div>
+                  <div className="border-t border-slate-100 pt-6"><label className="block text-sm font-medium text-slate-700 mb-1">Upload Incoming PDF Package</label><div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md bg-slate-50 hover:bg-slate-100"><div className="space-y-1 text-center"><UploadCloud className="mx-auto h-12 w-12 text-slate-400"/><div className="flex text-sm text-slate-600 justify-center"><label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500"><span>Select a file</span><input type="file" className="sr-only" accept="application/pdf" onChange={e=>setIntakeFile(e.target.files[0])}/></label><p className="pl-1">or drag and drop</p></div><p className="text-xs text-slate-500 font-bold mt-2">{intakeFile?`Selected: ${intakeFile.name}`:'PDF up to 50MB'}</p></div></div></div>
+                  <div className="border-t border-slate-100 pt-6 grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Initial Assignment</label>
+                      <select name="assignedTo" defaultValue={activeUserRole.name} className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        {allUserOptions.map(n=><option key={n} value={n}>{n}</option>)}
+                      </select>
                     </div>
+                    {/* ── NEW: BIC on intake ── */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1"><CircleDot className="w-4 h-4 text-slate-400"/>Ball in Court</label>
+                      <select name="ballInCourt" defaultValue="Contractor" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        {BIC_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                    <button type="button" onClick={()=>setCurrentView('dashboard')} disabled={isUploading} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+                    <button type="submit" disabled={isUploading} className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50">
+                      {isUploading?<><UploadCloud className="w-4 h-4 animate-bounce"/>{intakeFile?`Uploading (${uploadProgress}%)...`:'Processing...'}</>:`Log & Upload ${termModule}`}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── DETAIL ── */}
+        {currentView==='detail'&&activeRecordItem&&(
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* Left column */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="flex items-center justify-between">
+                <button onClick={()=>{setActiveRecordItem(null);setCurrentView('dashboard');}} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800"><ArrowLeft className="w-4 h-4"/>Back to List</button>
+                <button onClick={()=>handleDeleteRecord(activeRecordItem.id)} className="flex items-center gap-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md"><Trash2 className="w-4 h-4"/>Delete</button>
+              </div>
+
+              {/* Properties */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                {!isEditing?(
+                  <>
+                    <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-2"><h3 className="font-bold text-slate-900">Properties</h3><button onClick={()=>{setEditFormData({title:activeRecordItem.title,subtitle:activeRecordItem.subtitle||'',contractor:activeRecordItem.contractor,revision:activeRecordItem.revision,slaDays:activeRecordItem.slaDays,relatedDocs:activeRecordItem.relatedDocs||''});setIsEditing(true);}} className="text-slate-400 hover:text-blue-600 p-1"><Edit2 className="w-4 h-4"/></button></div>
+                    <dl className="space-y-4 text-sm">
+                      <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termModule} ID</dt><dd className="font-medium text-slate-900">{activeRecordItem.id} ({termRev} {activeRecordItem.revision})</dd></div>
+                      <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Logged By</dt><dd className="font-medium text-slate-900">{activeRecordItem.loggedBy||'System Legacy'}</dd></div>
+                      {activeRecordItem.subtitle&&<div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termSubtitle}</dt><dd className="font-medium text-slate-900">{activeRecordItem.subtitle}</dd></div>}
+                      {activeRecordItem.relatedDocs&&<div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100"><dt className="text-blue-600 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/>Plan Sheets</dt><dd className="font-semibold text-slate-900">{activeRecordItem.relatedDocs}</dd></div>}
+                      <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Project</dt><dd className="font-medium text-slate-900">{activeRecordItem.projectName}</dd></div>
+                      <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Contractor</dt><dd className="font-medium text-slate-900">{activeRecordItem.contractor}</dd></div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Received</dt><dd className="font-medium text-slate-900">{new Date(activeRecordItem.dateReceived).toLocaleDateString()}</dd></div>
+                        <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">SLA</dt><dd className="font-medium text-slate-900">{activeRecordItem.slaDays} Days</dd></div>
+                      </div>
+                      <div><dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Due Date</dt><dd className="font-medium text-slate-900">{new Date(activeRecordItem.dueDate).toLocaleDateString()}</dd></div>
+                    </dl>
+                  </>
+                ):(
+                  <form onSubmit={handleEditSubmit} className="space-y-4">
+                    <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Edit Properties</h3>
+                    <div><label className="block text-xs font-medium text-slate-500 mb-1">Title</label><input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.title} onChange={e=>setEditFormData({...editFormData,title:e.target.value})}/></div>
+                    <div><label className="block text-xs font-medium text-slate-500 mb-1">{termSubtitle}</label><input type="text" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.subtitle} onChange={e=>setEditFormData({...editFormData,subtitle:e.target.value})}/></div>
+                    <div><label className="block text-xs font-medium text-blue-600 mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/>Plan Sheets / Refs</label><input type="text" className="w-full border border-blue-300 bg-blue-50/50 rounded p-1.5 text-sm" value={editFormData.relatedDocs} onChange={e=>setEditFormData({...editFormData,relatedDocs:e.target.value})}/></div>
+                    <div><label className="block text-xs font-medium text-slate-500 mb-1">Contractor</label><input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.contractor} onChange={e=>setEditFormData({...editFormData,contractor:e.target.value})}/></div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><label className="block text-xs font-medium text-slate-500 mb-1">{termRev}</label><input type="number" required min="0" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.revision} onChange={e=>setEditFormData({...editFormData,revision:e.target.value})}/></div>
+                      <div><label className="block text-xs font-medium text-slate-500 mb-1">SLA (Days)</label><input type="number" required min="1" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.slaDays} onChange={e=>setEditFormData({...editFormData,slaDays:e.target.value})}/></div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2"><button type="button" onClick={()=>setIsEditing(false)} className="px-3 py-1.5 border border-slate-300 rounded text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button><button type="submit" className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">Save Changes</button></div>
                   </form>
+                )}
+              </div>
+
+              {/* Cloud Files */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Cloud Files</h3>
+                <div className="space-y-3">
+                  {activeRecordItem.incomingPdfRef?(<div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200"><div className="flex items-center gap-2 overflow-hidden"><FileText className="w-5 h-5 text-blue-500 flex-shrink-0"/><div className="text-sm font-medium text-slate-700 truncate">{activeRecordItem.incomingFileName||'Incoming Package'}</div></div><a href={activeRecordItem.incomingPdfRef} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md"><Download className="w-4 h-4"/></a></div>):<p className="text-sm text-slate-500 italic">No incoming file uploaded.</p>}
+                  {activeRecordItem.outgoingPdfRef&&(<div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200"><div className="flex items-center gap-2 overflow-hidden"><CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0"/><div className="text-sm font-medium text-green-800 truncate">{activeRecordItem.outgoingFileName||'Marked Up Final'}</div></div><a href={activeRecordItem.outgoingPdfRef} target="_blank" rel="noreferrer" className="text-green-700 hover:text-green-900 bg-green-100 hover:bg-green-200 p-1.5 rounded-md"><Download className="w-4 h-4"/></a></div>)}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* TOAST */}
-          {toast && (
-            <div className="fixed bottom-4 right-4 z-50">
-              <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type==='error'?'bg-red-50 border-red-200 text-red-800':'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
-                {toast.type==='error' ? <AlertCircle className="w-5 h-5"/> : <CheckCircle className="w-5 h-5"/>}
-                <p className="text-sm font-medium">{toast.message}</p>
-                <button onClick={() => setToast(null)}><X className="w-4 h-4 text-slate-400"/></button>
+              {/* Comments */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col h-80">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2"><MessageSquare className="w-4 h-4 text-slate-500"/><h3 className="font-bold text-slate-900">Discussion</h3></div>
+                <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                  {(!activeRecordItem.comments||activeRecordItem.comments.length===0)?<p className="text-sm text-slate-400 text-center italic mt-4">No comments yet.</p>:activeRecordItem.comments.map(c=>(
+                    <div key={c.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100"><div className="flex justify-between items-start mb-1"><span className="font-medium text-xs text-slate-800">{c.user}</span><span className="text-[10px] text-slate-400">{new Date(c.timestamp).toLocaleDateString()} {new Date(c.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><p className="text-sm text-slate-700 whitespace-pre-wrap">{c.text}</p></div>
+                  ))}
+                </div>
+                <form onSubmit={handleAddComment} className="mt-auto relative">
+                  <textarea className="w-full border border-slate-300 rounded-lg p-3 pr-12 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="2" placeholder="Add a comment..." value={newComment} onChange={e=>setNewComment(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleAddComment(e);}}}></textarea>
+                  <button type="submit" disabled={!newComment.trim()} className="absolute right-2 bottom-3 p-1.5 text-blue-600 hover:bg-blue-50 rounded-md disabled:opacity-50"><Send className="w-4 h-4"/></button>
+                </form>
               </div>
             </div>
-          )}
-        </div>
-      );
-    }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+            {/* Right column */}
+            <div className="lg:col-span-2 space-y-6">
+
+              {/* Routing card */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+                <div className="flex items-start justify-between mb-6">
+                  <div><h2 className="text-2xl font-bold text-slate-900">{activeRecordItem.title}</h2><p className="text-slate-500 mt-1">Review interface and routing controls</p></div>
+                  <div className={`px-3 py-1 rounded-full text-sm font-bold border ${(activeRecordItem.externalStatus||'').includes('Pending')?'bg-amber-50 text-amber-700 border-amber-200':(activeRecordItem.externalStatus||'').includes('Approved')||activeRecordItem.externalStatus==='Answered'||activeRecordItem.externalStatus==='Closed'?'bg-green-50 text-green-700 border-green-200':'bg-red-50 text-red-700 border-red-200'}`}>Official: {activeRecordItem.externalStatus||'Pending'}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-6">
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><UsersIcon className="w-4 h-4"/>Internal Routing</h4>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Assigned Engineer</label>
+                      <select className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none bg-white" value={assignedToInput} onChange={e=>{setAssignedToInput(e.target.value);handleUpdateStatus(activeRecordItem.id,{assignedTo:e.target.value||'Unassigned'});}}>
+                        {allUserOptions.map(n=><option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">QC Reviewer</label>
+                      <select className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none bg-white" value={qcReviewerInput} onChange={e=>{setQcReviewerInput(e.target.value);handleUpdateStatus(activeRecordItem.id,{qcReviewer:e.target.value});}}>
+                        <option value="">— None —</option>
+                        {allUserOptions.filter(n=>n!=='Unassigned').map(n=><option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Internal Status</label>
+                      <select className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none" value={activeRecordItem.internalStatus||'Unassigned'} onChange={e=>handleUpdateStatus(activeRecordItem.id,{internalStatus:e.target.value})}>
+                        {INTERNAL_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    {/* ── NEW: BIC on detail ── */}
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1 flex items-center gap-1"><CircleDot className="w-3 h-3"/>Ball in Court</label>
+                      <select className={`w-full border rounded-md p-2 text-sm font-semibold outline-none ${BIC_COLORS[activeRecordItem.ballInCourt||'—']}`} value={activeRecordItem.ballInCourt||'—'} onChange={e=>handleUpdateStatus(activeRecordItem.id,{ballInCourt:e.target.value})}>
+                        {BIC_OPTIONS.map(o=><option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/>Engineering Decision</h4>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Official {termModule} Status</label>
+                      <select className="w-full border border-amber-300 bg-amber-50 rounded-md p-2 text-sm focus:ring-amber-500 outline-none font-medium text-amber-900" value={activeRecordItem.externalStatus||'Pending'} onChange={e=>handleUpdateStatus(activeRecordItem.id,{externalStatus:e.target.value})}>
+                        {STATUSES[activeModule].map(s=><option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="pt-2">
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Upload Redlined Response</label>
+                      <div className="flex items-center gap-2">
+                        <input type="file" accept="application/pdf" onChange={e=>setOutgoingFile(e.target.files[0])} className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                        <button onClick={handleUploadOutgoingFile} disabled={!outgoingFile||isUploading} className="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-medium hover:bg-slate-900 disabled:opacity-50">{isUploading?`Uploading (${uploadProgress}%)...`:'Upload'}</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── NEW: History Log card ── */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
+                  <HistoryIcon className="w-4 h-4 text-slate-500"/>
+                  <h3 className="font-bold text-slate-900">Audit History</h3>
+                  <span className="ml-auto text-xs text-slate-400 font-medium">{(activeRecordItem.history||[]).length} events</span>
+                </div>
+                {(!activeRecordItem.history||activeRecordItem.history.length===0)?(
+                  <p className="text-sm text-slate-400 italic text-center py-4">No history recorded yet.</p>
+                ):(
+                  <div className="space-y-0 max-h-72 overflow-y-auto pr-1">
+                    {[...(activeRecordItem.history||[])].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).map((h,i)=>(
+                      <div key={i} className="flex gap-3 py-3 border-b border-slate-50 last:border-0">
+                        <div className="flex flex-col items-center">
+                          <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 flex-shrink-0"></div>
+                          {i<(activeRecordItem.history.length-1)&&<div className="w-px flex-1 bg-slate-200 mt-1"></div>}
+                        </div>
+                        <div className="pb-1 flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-800">{h.action}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-slate-500">{h.user}</span>
+                            <span className="text-slate-300 text-xs">•</span>
+                            <span className="text-xs text-slate-400">{new Date(h.timestamp).toLocaleDateString()} {new Date(h.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ANALYTICS ── */}
+        {currentView==='analytics'&&(()=>{
+          const active=activeRecords.filter(s=>s.internalStatus!=='Sent Out');
+          const overdue=active.filter(s=>Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000)>(s.slaDays||14));
+          const avgAge=active.length>0?Math.round(active.reduce((acc,s)=>acc+Math.floor((Date.now()-new Date(s.dateReceived).getTime())/86400000),0)/active.length):0;
+          const pct=active.length>0?Math.round(overdue.length/active.length*100):0;
+          const wMap={};active.forEach(s=>{const a=s.assignedTo||'Unassigned';wMap[a]=(wMap[a]||0)+1;});
+          const workload=Object.entries(wMap).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
+          const bicMap={};active.forEach(s=>{const b=s.ballInCourt||'—';bicMap[b]=(bicMap[b]||0)+1;});
+          return(
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-slate-200 pb-4"><div className="bg-slate-800 p-2 rounded-lg"><BarChart2 className="w-6 h-6 text-white"/></div><div><h2 className="text-2xl font-bold text-slate-900">Project Manager Analytics</h2><p className="text-sm text-slate-500">KPIs across active <span className="font-bold text-blue-600">{activeModule}</span>.</p></div></div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">Total Active</p><p className="text-3xl font-bold text-slate-900">{active.length}</p></div>
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-red-600 mb-1">Overdue</p><p className="text-3xl font-bold text-red-700">{overdue.length}</p></div>
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">Avg Aging (Days)</p><p className="text-3xl font-bold text-slate-900">{avgAge}</p></div>
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><p className="text-sm font-medium text-slate-500 mb-1">% Exceeding SLA</p><p className="text-3xl font-bold text-slate-900">{pct}%</p></div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"><div className="px-6 py-4 border-b border-slate-100 bg-slate-50"><h3 className="font-bold text-slate-800">Engineer Workload Distribution</h3></div><div className="p-6 space-y-4">{workload.length===0?<p className="text-sm text-slate-500 italic">No active assignments.</p>:workload.map(u=>{const max=Math.max(...workload.map(w=>w.count),1);return(<div key={u.name}><div className="flex justify-between text-sm mb-1"><span className="font-medium text-slate-700">{u.name}</span><span className="font-bold text-slate-900">{u.count} items</span></div><div className="w-full bg-slate-100 rounded-full h-2.5"><div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style={{width:`${u.count/max*100}%`}}></div></div></div>);})}</div></div>
+                {/* ── NEW: BIC breakdown in analytics ── */}
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"><div className="px-6 py-4 border-b border-slate-100 bg-slate-50"><h3 className="font-bold text-slate-800">Ball-in-Court Breakdown</h3></div><div className="p-6 space-y-3">{Object.entries(bicMap).length===0?<p className="text-sm text-slate-500 italic">No data.</p>:Object.entries(bicMap).sort((a,b)=>b[1]-a[1]).map(([bic,count])=>{const max=Math.max(...Object.values(bicMap),1);return(<div key={bic}><div className="flex justify-between text-sm mb-1"><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${BIC_COLORS[bic]||BIC_COLORS['—']}`}>{bic}</span><span className="font-bold text-slate-900">{count} items</span></div><div className="w-full bg-slate-100 rounded-full h-2.5"><div className="h-2.5 rounded-full transition-all duration-500 bg-slate-500" style={{width:`${count/max*100}%`}}></div></div></div>);})}</div></div>
+              </div>
+            </div>
+          );
+        })()}
+
+      </main>
+
+      {/* Quick Comment Modal */}
+      {quickCommentModal&&(
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50"><h3 className="font-bold text-slate-900 flex items-center gap-2"><MessageSquare className="w-4 h-4 text-blue-600"/>Quick Comment</h3><button onClick={()=>setQuickCommentModal(null)}><X className="w-5 h-5 text-slate-400 hover:text-slate-600"/></button></div>
+            <div className="p-6">
+              <div className="mb-4"><p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{termModule}</p><p className="font-medium text-slate-900">{quickCommentModal.title}</p><p className="text-xs text-slate-500">ID: {quickCommentModal.id} • {termRev} {quickCommentModal.revision}</p></div>
+              <form onSubmit={handleQuickCommentSubmit}>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Your Note</label>
+                <textarea autoFocus className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="4" placeholder="Type your comment here..." value={quickCommentText} onChange={e=>setQuickCommentText(e.target.value)}></textarea>
+                <div className="flex justify-end gap-3 mt-6"><button type="button" onClick={()=>setQuickCommentModal(null)} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button><button type="submit" disabled={!quickCommentText.trim()} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50">Save Comment</button></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast&&(
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type==='error'?'bg-red-50 border-red-200 text-red-800':'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+            {toast.type==='error'?<AlertCircle className="w-5 h-5"/>:<CheckCircle className="w-5 h-5"/>}
+            <p className="text-sm font-medium">{toast.message}</p>
+            <button onClick={()=>setToast(null)}><X className="w-4 h-4 text-slate-400"/></button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
 </body>
 </html>
