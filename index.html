@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bridge Submittal & RFI Tracker</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+</head>
+<body class="bg-slate-50 antialiased text-slate-800">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ============================================================================
+    // INLINE SVG ICONS
+    // ============================================================================
+    const Icon = ({ children, className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+    );
+    const FileText = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></Icon>;
+    const FileQuestion = ({className}) => <Icon className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 10.3c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.4.5.8.5 1.3 0 1.3-2 2-2 2"/><circle cx="12" cy="17" r="1"/></Icon>;
+    const Layers = ({className}) => <Icon className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>;
+    const Plus = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+    const Search = ({className}) => <Icon className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>;
+    const Filter = ({className}) => <Icon className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></Icon>;
+    const ArrowLeft = ({className}) => <Icon className={className}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></Icon>;
+    const Download = ({className}) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
+    const UploadCloud = ({className}) => <Icon className={className}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></Icon>;
+    const CheckCircle = ({className}) => <Icon className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+    const Clock = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>;
+    const AlertCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+    const FilePlus = ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></Icon>;
+    const Users = ({className}) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
+    const Edit2 = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
+    const MessageSquare = ({className}) => <Icon className={className}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+    const Send = ({className}) => <Icon className={className}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></Icon>;
+    const CornerDownRight = ({className}) => <Icon className={className}><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></Icon>;
+    const Tag = ({className}) => <Icon className={className}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></Icon>;
+    const BarChart2 = ({className}) => <Icon className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></Icon>;
+    const X = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+    const LinkIcon = ({className}) => <Icon className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Icon>;
+
+    // ============================================================================
+    // FIREBASE INITIALIZATION 
+    // ============================================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrWXPOH_Uu3MKp5OInkqbypVB-NOU1Moc",
+      authDomain: "submittal-log.firebaseapp.com",
+      projectId: "submittal-log",
+      storageBucket: "submittal-log.firebasestorage.app",
+      messagingSenderId: "776483227689",
+      appId: "1:776483227689:web:380b3c45ec975fd7223438",
+      measurementId: "G-GVC1TMK90M"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    if (typeof window !== 'undefined' && firebase.analytics) {
+      firebase.analytics();
+    }
+
+    // ============================================================================
+    // MOCK DATA & CONSTANTS
+    // ============================================================================
+    const MOCK_PROJECTS = [
+      { id: 'PRJ-101', name: 'I-95 Viaduct Rehabilitation', client: 'State DOT' },
+      { id: 'PRJ-102', name: 'Main St Bridge Replacement', client: 'County Public Works' },
+      { id: 'PRJ-103', name: 'Pedestrian Walkway Structural Steel', client: 'City Parks Dept' }
+    ];
+
+    const MOCK_TEAM = [
+      { id: 'user-sarah', name: 'Sarah Jenkins', role: 'Structural Engineer' },
+      { id: 'user-david', name: 'David Chen', role: 'Bridge Detailer / QA' },
+      { id: 'user-mike', name: 'Mike Rodriguez', role: 'Project Manager' },
+      { id: 'unassigned', name: 'Unassigned', role: 'N/A' }
+    ];
+
+    const INTERNAL_STATUSES = ['Unassigned', 'Assigned', 'In Review', 'Ready for PM Approval', 'Sent Out'];
+    
+    // Module-specific statuses
+    const STATUSES = {
+      submittals: ['Pending', 'Approved', 'Approved as Noted', 'Revise & Resubmit', 'Rejected', 'Information Only'],
+      rfis: ['Pending', 'Answered', 'Clarification Requested', 'Closed']
+    };
+
+    // ============================================================================
+    // MAIN APPLICATION COMPONENT
+    // ============================================================================
+    function App() {
+      const [user, setUser] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+
+      // Core Routing & Context State
+      const [activeModule, setActiveModule] = useState('submittals'); // 'submittals' or 'rfis'
+      const [activeUserRole, setActiveUserRole] = useState(MOCK_TEAM[0]); 
+      const [currentView, setCurrentView] = useState('dashboard'); 
+      const [activeRecordItem, setActiveRecordItem] = useState(null);
+      
+      const [activeRecords, setActiveRecords] = useState([]);
+      const [loadingData, setLoadingData] = useState(true);
+
+      const [searchQuery, setSearchQuery] = useState('');
+      const [dashboardTab, setDashboardTab] = useState('my-queue'); 
+
+      // Edit Mode State
+      const [isEditing, setIsEditing] = useState(false);
+      const [editFormData, setEditFormData] = useState({});
+
+      // Comment States
+      const [newComment, setNewComment] = useState('');
+      const [quickCommentModal, setQuickCommentModal] = useState(null); 
+      const [quickCommentText, setQuickCommentText] = useState('');
+
+      // Intake Form State
+      const [intakeProject, setIntakeProject] = useState('');
+      const [intakeType, setIntakeType] = useState('new'); 
+      const [intakeBaseId, setIntakeBaseId] = useState('');
+      const [intakeTitle, setIntakeTitle] = useState('');
+      const [intakeSubtitle, setIntakeSubtitle] = useState('');
+      const [intakeContractor, setIntakeContractor] = useState('');
+      const [intakeRevision, setIntakeRevision] = useState(0);
+      const [intakeSlaDays, setIntakeSlaDays] = useState(14);
+      const [intakeComponents, setIntakeComponents] = useState('');
+      const [intakeDisciplines, setIntakeDisciplines] = useState('');
+      const [intakeRelatedDocs, setIntakeRelatedDocs] = useState(''); // NEW: Cross-referencing
+
+      const [toast, setToast] = useState(null);
+
+      const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      // Reset states on view change
+      useEffect(() => {
+        if (currentView === 'intake') {
+          setIntakeProject('');
+          setIntakeType('new');
+          setIntakeBaseId('');
+          setIntakeTitle('');
+          setIntakeSubtitle('');
+          setIntakeContractor('');
+          setIntakeRevision(0);
+          setIntakeSlaDays(14);
+          setIntakeComponents('');
+          setIntakeDisciplines('');
+          setIntakeRelatedDocs('');
+        }
+        if (currentView !== 'detail') {
+          setIsEditing(false);
+          setNewComment('');
+        }
+      }, [currentView, activeModule]);
+
+      // Auto-populate when revising
+      useEffect(() => {
+        if (intakeType === 'revision' && intakeBaseId) {
+          const baseRec = activeRecords.find(s => s.id === intakeBaseId);
+          if (baseRec) {
+            setIntakeTitle(baseRec.title);
+            setIntakeSubtitle(baseRec.subtitle || '');
+            setIntakeContractor(baseRec.contractor);
+            setIntakeRevision(Number(baseRec.revision) + 1);
+            setIntakeSlaDays(baseRec.slaDays || 14);
+            setIntakeRelatedDocs(baseRec.relatedDocs || '');
+          }
+        }
+      }, [intakeType, intakeBaseId, activeRecords]);
+
+      // Auth effect
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            await auth.signInAnonymously();
+          } catch (error) {
+            console.warn("Auth Note: Falling back to unauthenticated mode for Test Mode access.", error);
+          } finally {
+            setAuthLoading(false);
+          }
+        };
+        initAuth();
+        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+          setUser(currentUser);
+          setAuthLoading(false);
+        });
+        return () => unsubscribe();
+      }, []);
+
+      // Dynamic Module Fetch Effect
+      useEffect(() => {
+        setLoadingData(true);
+        const colRef = db.collection(activeModule); // Dynamically queries 'submittals' or 'rfis'
+        
+        const unsubscribe = colRef.onSnapshot(
+          (snapshot) => {
+            const fetchedData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            fetchedData.sort((a, b) => new Date(b.dateReceived) - new Date(a.dateReceived));
+            setActiveRecords(fetchedData);
+            
+            if (activeRecordItem) {
+              const updatedActive = fetchedData.find(s => s.id === activeRecordItem.id);
+              if (updatedActive) setActiveRecordItem(updatedActive);
+            }
+            setLoadingData(false);
+          },
+          (error) => {
+            console.error("Firestore sync error:", error);
+            setLoadingData(false);
+          }
+        );
+
+        return () => unsubscribe();
+      }, [activeModule, activeRecordItem?.id]);
+
+      // --------------------------------------------------------------------------
+      // DATA HANDLERS
+      // --------------------------------------------------------------------------
+      const handleIntakeSubmit = async (formData) => {
+        const prefix = activeModule === 'submittals' ? 'SUB' : 'RFI';
+        const recordId = `${prefix}-${Date.now().toString().slice(-6)}`;
+        const slaDays = Number(formData.slaDays) || 14;
+        
+        const tags = {
+          components: intakeComponents.split(',').map(s => s.trim()).filter(s => s),
+          disciplines: intakeDisciplines.split(',').map(s => s.trim()).filter(s => s)
+        };
+        
+        const newRecord = {
+          projectId: formData.projectId,
+          projectName: MOCK_PROJECTS.find(p => p.id === formData.projectId)?.name || 'Unknown Project',
+          title: formData.title,
+          subtitle: formData.subtitle || '',
+          contractor: formData.contractor,
+          revision: Number(formData.revision),
+          baseSubmittalId: formData.baseSubmittalId || null, 
+          dateReceived: new Date().toISOString(),
+          slaDays: slaDays,
+          dueDate: new Date(Date.now() + slaDays * 24 * 60 * 60 * 1000).toISOString(),
+          assignedTo: formData.assignedTo,
+          internalStatus: formData.assignedTo === 'unassigned' ? 'Unassigned' : 'Assigned',
+          externalStatus: 'Pending',
+          incomingPdfRef: formData.fileName || null, 
+          outgoingPdfRef: null,
+          relatedDocs: intakeRelatedDocs.trim(), // Linkage added here
+          comments: [], 
+          tags: tags,
+          history: [{
+            timestamp: new Date().toISOString(),
+            action: `Ingested ${activeModule.slice(0, -1)}`,
+            user: activeUserRole.name
+          }]
+        };
+
+        try {
+          await db.collection(activeModule).doc(recordId).set(newRecord);
+          showToast(`${activeModule.slice(0, -1)} logged successfully!`);
+          setCurrentView('dashboard');
+        } catch (error) {
+          console.error("Error creating record:", error);
+          showToast('Error saving record.', 'error');
+        }
+      };
+
+      const handleUpdateStatus = async (recordId, updateData) => {
+        try {
+          await db.collection(activeModule).doc(recordId).update({
+            ...updateData,
+            history: [
+              ...activeRecordItem.history, 
+              {
+                timestamp: new Date().toISOString(),
+                action: `Updated properties/status`,
+                user: activeUserRole.name
+              }
+            ]
+          });
+          showToast('Status updated successfully!');
+        } catch (error) {
+          console.error("Error updating record:", error);
+          showToast('Error updating record.', 'error');
+        }
+      };
+
+      const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const newSlaDays = Number(editFormData.slaDays) || 14;
+          const newDueDate = new Date(new Date(activeRecordItem.dateReceived).getTime() + newSlaDays * 24 * 60 * 60 * 1000).toISOString();
+
+          await db.collection(activeModule).doc(activeRecordItem.id).update({
+            title: editFormData.title,
+            subtitle: editFormData.subtitle,
+            contractor: editFormData.contractor,
+            revision: Number(editFormData.revision),
+            slaDays: newSlaDays,
+            dueDate: newDueDate,
+            relatedDocs: editFormData.relatedDocs,
+            history: [
+              ...activeRecordItem.history, 
+              {
+                timestamp: new Date().toISOString(),
+                action: `Edited Metadata`,
+                user: activeUserRole.name
+              }
+            ]
+          });
+          setIsEditing(false);
+          showToast('Properties updated.');
+        } catch (error) {
+          console.error("Error saving edits:", error);
+          showToast('Error saving edits.', 'error');
+        }
+      };
+
+      const handleAddComment = async (e) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+
+        const commentObj = {
+          id: Date.now().toString(),
+          text: newComment.trim(),
+          user: activeUserRole.name,
+          timestamp: new Date().toISOString()
+        };
+
+        const updatedComments = [...(activeRecordItem.comments || []), commentObj];
+
+        try {
+          await db.collection(activeModule).doc(activeRecordItem.id).update({
+            comments: updatedComments
+          });
+          setNewComment('');
+        } catch (error) {
+          console.error("Error adding comment:", error);
+          showToast('Error adding comment.', 'error');
+        }
+      };
+
+      const handleQuickCommentSubmit = async (e) => {
+        e.preventDefault();
+        if (!quickCommentText.trim() || !quickCommentModal) return;
+
+        const commentObj = {
+          id: Date.now().toString(),
+          text: quickCommentText.trim(),
+          user: activeUserRole.name,
+          timestamp: new Date().toISOString()
+        };
+
+        const updatedComments = [...(quickCommentModal.comments || []), commentObj];
+
+        try {
+          await db.collection(activeModule).doc(quickCommentModal.id).update({
+            comments: updatedComments
+          });
+          showToast('Comment added successfully.');
+          setQuickCommentModal(null);
+          setQuickCommentText('');
+        } catch (error) {
+          console.error("Error adding comment:", error);
+          showToast('Error adding comment.', 'error');
+        }
+      };
+
+      const exportToCSV = () => {
+        const moduleLabel = activeModule === 'submittals' ? 'Submittal' : 'RFI';
+        const revLabel = activeModule === 'submittals' ? 'Revision' : 'RFI No.';
+        const subLabel = activeModule === 'submittals' ? 'Spec Reference' : 'Proposed Solution';
+
+        const headers = [`${moduleLabel} ID`, revLabel, "Title", subLabel, "Project", "Contractor", "Internal Status", "External Status", "Assigned To", "Date Received", "SLA Days", "Due Date", "Component Tags", "Discipline Tags", "Related Plan Sheets"];
+        
+        const rows = treeRecords.map(sub => [
+          sub.id,
+          sub.revision,
+          `"${sub.title.replace(/"/g, '""')}"`,
+          `"${(sub.subtitle || '').replace(/"/g, '""')}"`,
+          `"${sub.projectName.replace(/"/g, '""')}"`,
+          `"${sub.contractor.replace(/"/g, '""')}"`,
+          sub.internalStatus,
+          sub.externalStatus,
+          MOCK_TEAM.find(t => t.id === sub.assignedTo)?.name || 'Unassigned',
+          new Date(sub.dateReceived).toLocaleDateString(),
+          sub.slaDays,
+          new Date(sub.dueDate).toLocaleDateString(),
+          `"${(sub.tags?.components || []).join(', ')}"`,
+          `"${(sub.tags?.disciplines || []).join(', ')}"`,
+          `"${(sub.relatedDocs || '').replace(/"/g, '""')}"`
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${moduleLabel}_Log_Export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Export triggered successfully.');
+      };
+
+      // --------------------------------------------------------------------------
+      // DERIVED DATA
+      // --------------------------------------------------------------------------
+      const filteredRecords = activeRecords.filter(sub => {
+        const matchesSearch = sub.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                              sub.projectName.toLowerCase().includes(searchQuery.toLowerCase());
+        if (dashboardTab === 'my-queue') {
+          return matchesSearch && sub.assignedTo === activeUserRole.id && sub.internalStatus !== 'Sent Out';
+        }
+        return matchesSearch;
+      });
+
+      const treeRecords = React.useMemo(() => {
+        const subMap = {};
+        filteredRecords.forEach(s => { subMap[s.id] = { ...s, children: [] }; });
+
+        const roots = [];
+        filteredRecords.forEach(s => {
+          if (s.baseSubmittalId && subMap[s.baseSubmittalId]) {
+            subMap[s.baseSubmittalId].children.push(subMap[s.id]);
+          } else {
+            roots.push(subMap[s.id]);
+          }
+        });
+
+        const getMaxDate = (node) => {
+          let maxDate = new Date(node.dateReceived).getTime();
+          node.children.forEach(child => {
+            const childMax = getMaxDate(child);
+            if (childMax > maxDate) maxDate = childMax;
+          });
+          return maxDate;
+        };
+
+        roots.sort((a, b) => getMaxDate(b) - getMaxDate(a));
+
+        const flatTree = [];
+        const flatten = (node, level) => {
+          node.indentLevel = level;
+          node.children.sort((a, b) => a.revision - b.revision);
+          flatTree.push(node);
+          node.children.forEach(child => flatten(child, level + 1));
+        };
+
+        roots.forEach(root => flatten(root, 0));
+        return flatTree;
+      }, [filteredRecords]);
+
+      // Dynamic Module Variables
+      const isRfi = activeModule === 'rfis';
+      const termModule = isRfi ? 'RFI' : 'Submittal';
+      const termRev = isRfi ? 'RFI No.' : 'Revision';
+      const termSubtitle = isRfi ? 'Proposed Solution / Reason' : 'Description / Spec Reference';
+
+      if (authLoading) {
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="animate-pulse flex flex-col items-center">
+              <UploadCloud className="w-12 h-12 text-blue-600 mb-4" />
+              <p className="text-slate-600 font-medium">Initializing Secure Environment...</p>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+          
+          {/* HEADER TOP NAVIGATION */}
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                {/* Logo Area */}
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
+                  <div className="bg-slate-800 p-2 rounded-lg">
+                    {isRfi ? <FileQuestion className="w-5 h-5 text-white" /> : <Layers className="w-5 h-5 text-white" />}
+                  </div>
+                  <div>
+                    <h1 className="font-bold text-lg leading-tight text-slate-900">Bridge<span className="text-blue-600">Sync</span></h1>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Engineering Hub</p>
+                  </div>
+                </div>
+
+                {/* THE CONTEXT SWITCHER */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 ml-4">
+                  <button 
+                    onClick={() => { setActiveModule('submittals'); setCurrentView('dashboard'); }}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${!isRfi ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <Layers className="w-4 h-4" /> Submittals
+                  </button>
+                  <button 
+                    onClick={() => { setActiveModule('rfis'); setCurrentView('dashboard'); }}
+                    className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${isRfi ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <FileQuestion className="w-4 h-4" /> RFIs
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1 border border-slate-200">
+                  <Users className="w-4 h-4 text-slate-500 ml-2" />
+                  <select 
+                    className="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer outline-none pr-2"
+                    value={activeUserRole.id}
+                    onChange={(e) => setActiveUserRole(MOCK_TEAM.find(u => u.id === e.target.value))}
+                  >
+                    {MOCK_TEAM.filter(u => u.id !== 'unassigned').map(team => (
+                      <option key={team.id} value={team.id}>Viewing as: {team.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button 
+                  onClick={() => setCurrentView('intake')}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Log {termModule}
+                </button>
+                <button 
+                  onClick={() => setCurrentView('analytics')}
+                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                >
+                  <BarChart2 className="w-4 h-4" /> Analytics
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            {/* VIEW: DASHBOARD */}
+            {currentView === 'dashboard' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <h2 className="text-2xl font-bold text-slate-900">{termModule} Register</h2>
+                  
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input 
+                        type="text" 
+                        placeholder="Search titles or projects..." 
+                        className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium shadow-sm transition-colors">
+                      <Download className="w-4 h-4" /> Export CSV
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 border-b border-slate-200">
+                  <button 
+                    className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab === 'my-queue' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                    onClick={() => setDashboardTab('my-queue')}
+                  >
+                    My Queue ({activeRecords.filter(s => s.assignedTo === activeUserRole.id && s.internalStatus !== 'Sent Out').length})
+                  </button>
+                  <button 
+                    className={`pb-3 text-sm font-medium border-b-2 transition-colors ${dashboardTab === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                    onClick={() => setDashboardTab('all')}
+                  >
+                    All Active {isRfi ? 'RFIs' : 'Submittals'}
+                  </button>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                  {loadingData ? (
+                    <div className="p-8 text-center text-slate-500">Loading {activeModule}...</div>
+                  ) : filteredRecords.length === 0 ? (
+                    <div className="p-12 text-center flex flex-col items-center">
+                      <CheckCircle className="w-12 h-12 text-green-500 mb-3 opacity-50" />
+                      <h3 className="text-lg font-medium text-slate-900">All caught up!</h3>
+                      <p className="text-slate-500 text-sm mt-1">No active items found in this view.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                            <th className="p-4 font-semibold">{termModule} Info</th>
+                            <th className="p-4 font-semibold">Project</th>
+                            <th className="p-4 font-semibold">Timeline & SLA</th>
+                            <th className="p-4 font-semibold">Routing Status</th>
+                            <th className="p-4 font-semibold">Aging</th>
+                            <th className="p-4 font-semibold text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {treeRecords.map(sub => {
+                            const msElapsed = Date.now() - new Date(sub.dateReceived).getTime();
+                            const daysElapsed = Math.floor(msElapsed / (1000 * 60 * 60 * 24));
+                            const isLate = daysElapsed > (sub.slaDays || 14);
+
+                            return (
+                              <tr key={sub.id} className="hover:bg-slate-50 transition-colors group">
+                                <td className="p-4">
+                                  <div className="flex items-start gap-2" style={{ paddingLeft: `${sub.indentLevel * 1.5}rem` }}>
+                                    {sub.indentLevel > 0 && <CornerDownRight className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />}
+                                    <div>
+                                      <div className="font-bold text-slate-900">{sub.title}</div>
+                                      {sub.subtitle && <div className="text-sm text-slate-600 mb-0.5">{sub.subtitle}</div>}
+                                      <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                                        <span>ID: {sub.id} • {termRev} {sub.revision}</span>
+                                        {sub.relatedDocs && (
+                                          <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 rounded" title="Cross-Referenced Plan Sheets">
+                                            <LinkIcon className="w-3 h-3" /> {sub.relatedDocs}
+                                          </span>
+                                        )}
+                                      </div>
+                                      
+                                      {(sub.tags?.components?.length > 0 || sub.tags?.disciplines?.length > 0) && (
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                          {sub.tags.components?.map((tag, i) => (
+                                            <span key={`comp-${i}`} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                              <Tag className="w-3 h-3" /> {tag}
+                                            </span>
+                                          ))}
+                                          {sub.tags.disciplines?.map((tag, i) => (
+                                            <span key={`disc-${i}`} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                                              {tag}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <div className="text-sm font-medium text-slate-800">{sub.projectName}</div>
+                                  <div className="text-xs text-slate-500 mt-0.5">{sub.contractor}</div>
+                                </td>
+                                <td className="p-4">
+                                  <div className="text-xs text-slate-600 space-y-1">
+                                    <div><span className="text-slate-400 w-16 inline-block">Received:</span> <span className="font-medium text-slate-800">{new Date(sub.dateReceived).toLocaleDateString()}</span></div>
+                                    <div><span className="text-slate-400 w-16 inline-block">SLA:</span> <span className="font-medium text-slate-800">{sub.slaDays} Days</span></div>
+                                    <div><span className="text-slate-400 w-16 inline-block">Due:</span> <span className={`font-medium ${isLate ? 'text-red-600' : 'text-slate-800'}`}>{new Date(sub.dueDate).toLocaleDateString()}</span></div>
+                                  </div>
+                                </td>
+                                <td className="p-4 space-y-2">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
+                                    ${sub.internalStatus === 'Sent Out' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                      sub.internalStatus === 'In Review' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                                      sub.internalStatus === 'Ready for PM Approval' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
+                                      'bg-slate-100 text-slate-700 border-slate-200'}`}
+                                  >
+                                    {sub.internalStatus}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                      {MOCK_TEAM.find(t => t.id === sub.assignedTo)?.name.charAt(0) || '?'}
+                                    </div>
+                                    <span className="text-xs text-slate-700">{MOCK_TEAM.find(t => t.id === sub.assignedTo)?.name || 'Unassigned'}</span>
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <div className={`flex items-center gap-1.5 text-sm font-medium ${isLate ? 'text-red-600' : 'text-slate-600'}`}>
+                                    <Clock className="w-4 h-4" />
+                                    {daysElapsed} Days
+                                  </div>
+                                </td>
+                                <td className="p-4 text-right">
+                                  <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                      onClick={() => setQuickCommentModal(sub)}
+                                      className="flex items-center gap-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                                      title="Add Quick Comment"
+                                    >
+                                      <MessageSquare className="w-4 h-4" />
+                                      {sub.comments?.length > 0 && (
+                                        <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded-full">
+                                          {sub.comments.length}
+                                        </span>
+                                      )}
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        setActiveRecordItem(sub);
+                                        setCurrentView('detail');
+                                      }}
+                                      className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                                    >
+                                      Open Review
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW: INTAKE FORM */}
+            {currentView === 'intake' && (
+              <div className="max-w-2xl mx-auto">
+                <button 
+                  onClick={() => setCurrentView('dashboard')}
+                  className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 mb-6 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+                </button>
+                
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+                  <div className="flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      <FilePlus className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">Ingest {termModule}</h2>
+                      <p className="text-sm text-slate-500">Log an incoming {activeModule.slice(0, -1)} package from a contractor</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const fd = new FormData(e.target);
+                    handleIntakeSubmit(Object.fromEntries(fd));
+                  }} className="space-y-6">
+                    
+                    <div className="flex gap-4 p-1 bg-slate-100 rounded-lg w-fit">
+                      <button 
+                        type="button"
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'new' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => { setIntakeType('new'); setIntakeBaseId(''); setIntakeTitle(''); setIntakeContractor(''); setIntakeRevision(0); }}
+                      >
+                        New {termModule}
+                      </button>
+                      <button 
+                        type="button"
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${intakeType === 'revision' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setIntakeType('revision')}
+                      >
+                        Revision to Existing
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
+                        <select 
+                          name="projectId" 
+                          required 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                          value={intakeProject}
+                          onChange={(e) => { setIntakeProject(e.target.value); setIntakeBaseId(''); }}
+                        >
+                          <option value="">Select a project...</option>
+                          {MOCK_PROJECTS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
+
+                      {intakeType === 'revision' && (
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Select Existing Base {termModule}</label>
+                          <select 
+                            name="baseSubmittalId"
+                            required={intakeType === 'revision'}
+                            className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                            value={intakeBaseId}
+                            onChange={(e) => setIntakeBaseId(e.target.value)}
+                            disabled={!intakeProject}
+                          >
+                            <option value="">{intakeProject ? `Select a ${termModule} to revise...` : 'Select a project first...'}</option>
+                            {activeRecords
+                              .filter(s => s.projectId === intakeProject)
+                              .map(s => <option key={s.id} value={s.id}>{s.id} - {termRev} {s.revision}: {s.title}</option>)
+                            }
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{isRfi ? 'RFI Question / Title' : 'Submittal Title'}</label>
+                        <input 
+                          type="text" 
+                          name="title" 
+                          required 
+                          placeholder={isRfi ? "e.g. Discrepancy at Pier 2 Elevation" : "e.g. Abutment 1 Concrete Mix Design"}
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                          value={intakeTitle}
+                          onChange={(e) => setIntakeTitle(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{termSubtitle}</label>
+                        <input 
+                          type="text" 
+                          name="subtitle" 
+                          placeholder={isRfi ? "e.g. Contractor proposes field welding." : "e.g. Spec Section 550 - Structural Steel Details"}
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                          value={intakeSubtitle}
+                          onChange={(e) => setIntakeSubtitle(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
+                        <label className="block text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-600"/> Plan Sheets & Related Docs</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Sheet S-104, RFI-0042, Standard Det. 14A" 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/30" 
+                          value={intakeRelatedDocs}
+                          onChange={(e) => setIntakeRelatedDocs(e.target.value)}
+                        />
+                        <p className="text-xs text-slate-500 mt-1">Cross-reference specific contract drawings or prior documentation for legal traceability.</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Contractor / Sub</label>
+                        <input 
+                          type="text" 
+                          name="contractor" 
+                          required 
+                          placeholder="e.g. Apex Steel Corp" 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                          value={intakeContractor}
+                          onChange={(e) => setIntakeContractor(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{termRev}</label>
+                        <input 
+                          type="number" 
+                          name="revision" 
+                          required 
+                          min="0" 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                          value={intakeRevision}
+                          onChange={(e) => setIntakeRevision(Number(e.target.value))}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Allowable Review Period (Days)</label>
+                        <input 
+                          type="number" 
+                          name="slaDays" 
+                          required 
+                          min="1" 
+                          className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                          value={intakeSlaDays}
+                          onChange={(e) => setIntakeSlaDays(Number(e.target.value))}
+                        />
+                      </div>
+                      
+                      <div className="col-span-2 border-t border-slate-100 pt-4 mt-2">
+                        <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2"><Tag className="w-4 h-4"/> Metadata Tagging</h4>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Components</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Abutment 1, Pier 2, Deck" 
+                              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+                              value={intakeComponents}
+                              onChange={(e) => setIntakeComponents(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Disciplines</label>
+                            <input 
+                              type="text" 
+                              placeholder="e.g. Structural Steel, Rebar" 
+                              className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none" 
+                              value={intakeDisciplines}
+                              onChange={(e) => setIntakeDisciplines(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-6 mt-6">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Upload Incoming PDF Package</label>
+                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer relative">
+                        <div className="space-y-1 text-center">
+                          <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
+                          <div className="flex text-sm text-slate-600 justify-center">
+                            <span className="relative rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
+                              <span>Select a file</span>
+                              <input type="file" className="sr-only" onChange={(e) => {
+                                if(e.target.files[0]) {
+                                  document.getElementById('file-name-display').innerText = e.target.files[0].name;
+                                  document.getElementById('hidden-file-name').value = e.target.files[0].name;
+                                }
+                              }}/>
+                            </span>
+                            <p className="pl-1">or drag and drop</p>
+                          </div>
+                          <p className="text-xs text-slate-500" id="file-name-display">PDF up to 50MB</p>
+                          <input type="hidden" name="fileName" id="hidden-file-name" value="" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-6 mt-6">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Initial Assignment</label>
+                      <select name="assignedTo" className="w-full border border-slate-300 rounded-md p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        {MOCK_TEAM.map(p => <option key={p.id} value={p.id}>{p.name} ({p.role})</option>)}
+                      </select>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4">
+                      <button type="button" onClick={() => setCurrentView('dashboard')} className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50">Cancel</button>
+                      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">Log & Route {termModule}</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW: DETAIL & REVIEW */}
+            {currentView === 'detail' && activeRecordItem && (
+              <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* LEFT COLUMN: Properties, Files, Comments */}
+                <div className="lg:col-span-1 space-y-6">
+                  <button 
+                    onClick={() => {
+                      setActiveRecordItem(null);
+                      setCurrentView('dashboard');
+                    }}
+                    className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back to List
+                  </button>
+                  
+                  {/* Properties Card (with Edit logic) */}
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 relative">
+                    {!isEditing ? (
+                      <>
+                        <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-2">
+                          <h3 className="font-bold text-slate-900">Properties</h3>
+                          <button 
+                            onClick={() => {
+                              setEditFormData({
+                                title: activeRecordItem.title,
+                                subtitle: activeRecordItem.subtitle || '',
+                                contractor: activeRecordItem.contractor,
+                                revision: activeRecordItem.revision,
+                                slaDays: activeRecordItem.slaDays,
+                                relatedDocs: activeRecordItem.relatedDocs || ''
+                              });
+                              setIsEditing(true);
+                            }}
+                            className="text-slate-400 hover:text-blue-600 p-1 transition-colors"
+                            title={`Edit ${termModule}`}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <dl className="space-y-4 text-sm">
+                          <div>
+                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termModule} ID</dt>
+                            <dd className="font-medium text-slate-900">{activeRecordItem.id} ({termRev} {activeRecordItem.revision})</dd>
+                          </div>
+                          {activeRecordItem.subtitle && (
+                            <div>
+                              <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">{termSubtitle}</dt>
+                              <dd className="font-medium text-slate-900">{activeRecordItem.subtitle}</dd>
+                            </div>
+                          )}
+                          {activeRecordItem.relatedDocs && (
+                            <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                              <dt className="text-blue-600 text-[10px] uppercase font-bold tracking-wider mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/> Plan Sheets & Ref Docs</dt>
+                              <dd className="font-semibold text-slate-900">{activeRecordItem.relatedDocs}</dd>
+                            </div>
+                          )}
+                          <div>
+                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Project</dt>
+                            <dd className="font-medium text-slate-900">{activeRecordItem.projectName}</dd>
+                          </div>
+                          <div>
+                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Contractor</dt>
+                            <dd className="font-medium text-slate-900">{activeRecordItem.contractor}</dd>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Date Received</dt>
+                              <dd className="font-medium text-slate-900">{new Date(activeRecordItem.dateReceived).toLocaleDateString()}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">SLA</dt>
+                              <dd className="font-medium text-slate-900">{activeRecordItem.slaDays} Days</dd>
+                            </div>
+                          </div>
+                          <div>
+                            <dt className="text-slate-500 text-xs uppercase tracking-wider mb-1">Calculated Due Date</dt>
+                            <dd className="font-medium text-slate-900">{new Date(activeRecordItem.dueDate).toLocaleDateString()}</dd>
+                          </div>
+                        </dl>
+                      </>
+                    ) : (
+                      <form onSubmit={handleEditSubmit} className="space-y-4">
+                        <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Edit Properties</h3>
+                        
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Title</label>
+                          <input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.title} onChange={e => setEditFormData({...editFormData, title: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">{termSubtitle}</label>
+                          <input type="text" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.subtitle} onChange={e => setEditFormData({...editFormData, subtitle: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-blue-600 mb-1 flex items-center gap-1"><LinkIcon className="w-3 h-3"/> Plan Sheets / Refs</label>
+                          <input type="text" className="w-full border border-blue-300 bg-blue-50/50 rounded p-1.5 text-sm" value={editFormData.relatedDocs} onChange={e => setEditFormData({...editFormData, relatedDocs: e.target.value})} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Contractor</label>
+                          <input type="text" required className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.contractor} onChange={e => setEditFormData({...editFormData, contractor: e.target.value})} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">{termRev}</label>
+                            <input type="number" required min="0" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.revision} onChange={e => setEditFormData({...editFormData, revision: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-slate-500 mb-1">SLA (Days)</label>
+                            <input type="number" required min="1" className="w-full border border-slate-300 rounded p-1.5 text-sm" value={editFormData.slaDays} onChange={e => setEditFormData({...editFormData, slaDays: e.target.value})} />
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-end gap-2 pt-2">
+                          <button type="button" onClick={() => setIsEditing(false)} className="px-3 py-1.5 border border-slate-300 rounded text-xs font-medium text-slate-600 hover:bg-slate-50">Cancel</button>
+                          <button type="submit" className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700">Save Changes</button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+                    <h3 className="font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Files</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-slate-400" />
+                          <div className="text-sm font-medium text-slate-700 truncate max-w-[150px]">Incoming Package</div>
+                        </div>
+                        <button className="text-blue-600 hover:text-blue-800 bg-blue-50 p-1.5 rounded-md"><Download className="w-4 h-4"/></button>
+                      </div>
+                      
+                      {activeRecordItem.outgoingPdfRef && (
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <div className="text-sm font-medium text-green-800 truncate max-w-[150px]">Marked Up Final</div>
+                          </div>
+                          <button className="text-green-700 hover:text-green-900 bg-green-100 p-1.5 rounded-md"><Download className="w-4 h-4"/></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Comments Section */}
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-6 flex flex-col h-96">
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
+                      <MessageSquare className="w-4 h-4 text-slate-500" />
+                      <h3 className="font-bold text-slate-900">Discussion</h3>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                      {(!activeRecordItem.comments || activeRecordItem.comments.length === 0) ? (
+                        <p className="text-sm text-slate-400 text-center italic mt-4">No comments yet. Start the discussion.</p>
+                      ) : (
+                        activeRecordItem.comments.map(comment => (
+                          <div key={comment.id} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="font-medium text-xs text-slate-800">{comment.user}</span>
+                              <span className="text-[10px] text-slate-400">{new Date(comment.timestamp).toLocaleDateString()} {new Date(comment.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{comment.text}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    <form onSubmit={handleAddComment} className="mt-auto relative">
+                      <textarea 
+                        className="w-full border border-slate-300 rounded-lg p-3 pr-12 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        rows="2"
+                        placeholder="Add a comment or note..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAddComment(e);
+                          }
+                        }}
+                      ></textarea>
+                      <button 
+                        type="submit"
+                        disabled={!newComment.trim()}
+                        className="absolute right-2 bottom-3 p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: Review Routing */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-900">{activeRecordItem.title}</h2>
+                        <p className="text-slate-500 mt-1">Review interface and routing controls</p>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-sm font-bold border
+                          ${activeRecordItem.externalStatus === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                            activeRecordItem.externalStatus.includes('Approved') || activeRecordItem.externalStatus === 'Answered' || activeRecordItem.externalStatus === 'Closed' ? 'bg-green-50 text-green-700 border-green-200' :
+                            'bg-red-50 text-red-700 border-red-200'}
+                        `}
+                      >
+                        Official: {activeRecordItem.externalStatus}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-6">
+                      
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><Users className="w-4 h-4"/> Internal Routing</h4>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Assigned Engineer</label>
+                          <select 
+                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
+                            value={activeRecordItem.assignedTo}
+                            onChange={(e) => handleUpdateStatus(activeRecordItem.id, { assignedTo: e.target.value })}
+                          >
+                            {MOCK_TEAM.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Internal Status</label>
+                          <select 
+                            className="w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-blue-500 outline-none"
+                            value={activeRecordItem.internalStatus}
+                            onChange={(e) => handleUpdateStatus(activeRecordItem.id, { internalStatus: e.target.value })}
+                          >
+                            {INTERNAL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="font-semibold text-slate-800 text-sm flex items-center gap-2"><CheckCircle className="w-4 h-4"/> Engineering Decision</h4>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-500 mb-1">Official {termModule} Status</label>
+                          <select 
+                            className="w-full border border-amber-300 bg-amber-50 rounded-md p-2 text-sm focus:ring-amber-500 outline-none font-medium text-amber-900"
+                            value={activeRecordItem.externalStatus}
+                            onChange={(e) => handleUpdateStatus(activeRecordItem.id, { externalStatus: e.target.value })}
+                          >
+                            {STATUSES[activeModule].map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                        
+                        <div className="pt-2">
+                           <label className="block text-xs font-medium text-slate-500 mb-1">Upload Redlined Response</label>
+                           <button 
+                              className="w-full border border-slate-300 border-dashed bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-md p-2 text-sm flex items-center justify-center gap-2 transition-colors"
+                              onClick={() => {
+                                handleUpdateStatus(activeRecordItem.id, { outgoingPdfRef: 'final-response-v1.pdf' });
+                                showToast("Simulated upload of response document successful.");
+                              }}
+                           >
+                             <UploadCloud className="w-4 h-4"/> Upload Marked-Up File
+                           </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-6 mt-8">
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold text-slate-800 text-sm">Generate Transmittal</h4>
+                          <p className="text-xs text-slate-500">Create the formal PDF cover sheet to email the contractor.</p>
+                        </div>
+                        <button 
+                          className={`px-4 py-2 rounded-md text-sm font-medium shadow-sm flex items-center gap-2 transition-colors
+                            ${activeRecordItem.externalStatus === 'Pending' ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}
+                          `}
+                          disabled={activeRecordItem.externalStatus === 'Pending'}
+                          onClick={() => showToast("Transmittal PDF compilation process initiated.", "success")}
+                        >
+                          <FileText className="w-4 h-4" /> Create Cover Sheet
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW: ANALYTICS DASHBOARD */}
+            {currentView === 'analytics' && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                  <div className="bg-slate-800 p-2 rounded-lg">
+                    <BarChart2 className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Project Manager Analytics</h2>
+                    <p className="text-sm text-slate-500">KPIs and Workload Tracking across active <span className="font-bold text-blue-600">{activeModule}</span>.</p>
+                  </div>
+                </div>
+
+                {(() => {
+                  const activeItems = activeRecords.filter(s => s.internalStatus !== 'Sent Out');
+                  const overdueItems = activeItems.filter(s => {
+                    const days = Math.floor((Date.now() - new Date(s.dateReceived).getTime()) / (1000 * 60 * 60 * 24));
+                    return days > (s.slaDays || 14);
+                  });
+                  const totalDays = activeItems.reduce((acc, s) => acc + Math.floor((Date.now() - new Date(s.dateReceived).getTime()) / (1000 * 60 * 60 * 24)), 0);
+                  const avgTurnaround = activeItems.length > 0 ? Math.round(totalDays / activeItems.length) : 0;
+                  const percentOverdue = activeItems.length > 0 ? Math.round((overdueItems.length / activeItems.length) * 100) : 0;
+
+                  const workload = MOCK_TEAM.map(team => ({
+                    ...team,
+                    count: activeItems.filter(s => s.assignedTo === team.id).length
+                  })).sort((a, b) => b.count - a.count);
+
+                  return (
+                    <div className="space-y-8">
+                      {/* KPI Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                          <p className="text-sm font-medium text-slate-500 mb-1">Total Active {termModule}s</p>
+                          <p className="text-3xl font-bold text-slate-900">{activeItems.length}</p>
+                        </div>
+                        <div className="bg-white border border-red-200 rounded-xl p-6 shadow-sm bg-red-50">
+                          <p className="text-sm font-medium text-red-600 mb-1">Currently Overdue</p>
+                          <p className="text-3xl font-bold text-red-700">{overdueItems.length}</p>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                          <p className="text-sm font-medium text-slate-500 mb-1">Avg Active Aging (Days)</p>
+                          <p className="text-3xl font-bold text-slate-900">{avgTurnaround}</p>
+                        </div>
+                        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                          <p className="text-sm font-medium text-slate-500 mb-1">% Exceeding SLA</p>
+                          <p className="text-3xl font-bold text-slate-900">{percentOverdue}%</p>
+                        </div>
+                      </div>
+
+                      {/* Workload Distribution */}
+                      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                          <h3 className="font-bold text-slate-800">Engineer Workload Distribution ({activeModule})</h3>
+                        </div>
+                        <div className="p-6">
+                          <div className="space-y-4">
+                            {workload.map(user => {
+                              const maxCount = Math.max(...workload.map(w => w.count), 1);
+                              const width = `${(user.count / maxCount) * 100}%`;
+                              return (
+                                <div key={user.id}>
+                                  <div className="flex justify-between text-sm mb-1">
+                                    <span className="font-medium text-slate-700">{user.name}</span>
+                                    <span className="font-bold text-slate-900">{user.count} items</span>
+                                  </div>
+                                  <div className="w-full bg-slate-100 rounded-full h-2.5">
+                                    <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style={{ width }}></div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </main>
+
+          {/* Quick Comment Modal */}
+          {quickCommentModal && (
+            <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                  <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-blue-600" />
+                    Quick Comment
+                  </h3>
+                  <button onClick={() => setQuickCommentModal(null)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-6">
+                  <div className="mb-4">
+                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{termModule}</p>
+                    <p className="font-medium text-slate-900">{quickCommentModal.title}</p>
+                    <p className="text-xs text-slate-500">ID: {quickCommentModal.id} • {termRev} {quickCommentModal.revision}</p>
+                  </div>
+                  
+                  <form onSubmit={handleQuickCommentSubmit}>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Your Note</label>
+                    <textarea 
+                      autoFocus
+                      className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                      rows="4"
+                      placeholder="Type your comment here..."
+                      value={quickCommentText}
+                      onChange={(e) => setQuickCommentText(e.target.value)}
+                    ></textarea>
+                    
+                    <div className="flex justify-end gap-3 mt-6">
+                      <button 
+                        type="button" 
+                        onClick={() => setQuickCommentModal(null)} 
+                        className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        type="submit" 
+                        disabled={!quickCommentText.trim()}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50"
+                      >
+                        Save Comment
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Toast Notification Container */}
+          {toast && (
+            <div className="fixed bottom-4 right-4 z-50">
+              <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border transition-all duration-300 ${toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                <p className="text-sm font-medium">{toast.message}</p>
+                <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-600">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
