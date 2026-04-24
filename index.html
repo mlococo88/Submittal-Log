@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BridgeSync Engineering Hub</title>
+  <title>Construction Submittal Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
@@ -156,12 +156,19 @@ const Sidebar = ({ activeModule, setActiveModule, currentView, setCurrentView, i
       {/* Logo */}
       <div style={{ padding:'18px 16px 14px', borderBottom:'1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }} onClick={() => setCurrentView('dashboard')}>
-          <div style={{ background:'#2563eb', borderRadius:6, padding:6, display:'flex' }}>
-            {isRfi ? <IFileQ size={16} style={{ color:'#fff' }}/> : <ILayers size={16} style={{ color:'#fff' }}/>}
-          </div>
-          <div>
-            <div style={{ fontSize:15, fontWeight:700, color:'#f8fafc', letterSpacing:'-.01em' }}>Bridge<span style={{ color:'#60a5fa' }}>Sync</span></div>
-            <div style={{ fontSize:9, color:'#475569', letterSpacing:'.1em', textTransform:'uppercase', fontWeight:600 }}>Engineering Hub</div>
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink:0 }}>
+            <rect width="34" height="34" rx="7" fill="#1e3a8a"/>
+            <path d="M9 7h11l5 5v15a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="white" fillOpacity="0.1" stroke="white" strokeWidth="1.2"/>
+            <path d="M20 7l5 5h-4a1 1 0 0 1-1-1V7z" fill="white" fillOpacity="0.22"/>
+            <line x1="11.5" y1="15" x2="20" y2="15" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.65"/>
+            <line x1="11.5" y1="18" x2="22" y2="18" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.65"/>
+            <line x1="11.5" y1="21" x2="17" y2="21" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.65"/>
+            <circle cx="23.5" cy="24.5" r="5.5" fill="#10b981"/>
+            <polyline points="20.8,24.5 22.8,26.5 26.2,22.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#f1f5f9', lineHeight:1.3 }}>Construction<br/>Submittal Tracker</div>
+            <div style={{ fontSize:9, color:'#475569', fontWeight:500, marginTop:3 }}>by Mario LoCoco</div>
           </div>
         </div>
       </div>
@@ -237,7 +244,7 @@ function App() {
   const [uploading, setUploading]         = useState(false);
   const [progress, setProgress]           = useState(0);
   const [searchQ, setSearchQ]             = useState('');
-  const [tab, setTab]                     = useState('my-queue');
+  const [tab, setTab]                     = useState('all');
   const [showFilters, setShowFilters]     = useState(false);
   const [fProject, setFProject]           = useState('');
   const [fIntSt, setFIntSt]               = useState('');
@@ -546,10 +553,20 @@ function App() {
     <div style={{ minHeight:'100vh', background:'#f1f5f9', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
       <div style={{ width:'100%', maxWidth:380 }}>
         <div style={{ textAlign:'center', marginBottom:28 }}>
-          <div style={{ display:'inline-flex', background:'#0f172a', borderRadius:10, padding:12, marginBottom:14 }}>
-            <ILayers size={24} style={{ color:'#60a5fa' }}/>
+          <div style={{ display:'inline-flex', background:'#0f172a', borderRadius:12, padding:14, marginBottom:16 }}>
+            <svg width="36" height="36" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="34" height="34" rx="7" fill="#1e3a8a"/>
+              <path d="M9 7h11l5 5v15a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="white" fillOpacity="0.1" stroke="white" strokeWidth="1.2"/>
+              <path d="M20 7l5 5h-4a1 1 0 0 1-1-1V7z" fill="white" fillOpacity="0.22"/>
+              <line x1="11.5" y1="15" x2="20" y2="15" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.65"/>
+              <line x1="11.5" y1="18" x2="22" y2="18" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.65"/>
+              <line x1="11.5" y1="21" x2="17" y2="21" stroke="white" strokeWidth="1.1" strokeLinecap="round" strokeOpacity="0.65"/>
+              <circle cx="23.5" cy="24.5" r="5.5" fill="#10b981"/>
+              <polyline points="20.8,24.5 22.8,26.5 26.2,22.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
-          <h1 style={{ fontSize:22, fontWeight:700, color:'#0f172a', letterSpacing:'-.02em', margin:'0 0 6px' }}>Bridge<span style={{ color:'#2563eb' }}>Sync</span> Engineering</h1>
+          <h1 style={{ fontSize:22, fontWeight:700, color:'#0f172a', letterSpacing:'-.02em', margin:'0 0 4px' }}>Construction Submittal Tracker</h1>
+          <div style={{ fontSize:12, color:'#94a3b8', margin:'0 0 4px' }}>by Mario LoCoco</div>
           <p style={{ fontSize:13, color:'#64748b', margin:0 }}>{authMode === 'login' ? 'Sign in to access project records' : 'Create a new account'}</p>
         </div>
         <div className="card" style={{ padding:28 }}>
