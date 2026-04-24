@@ -121,7 +121,11 @@ const BIC_STYLE = {
 const fmtDate = d => new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
 const fmtTime = d => new Date(d).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
 const getSla  = s => {
-  const de = Math.floor((Date.now() - new Date(s.dateReceived).getTime()) / 86400000);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const recv = new Date(s.dateReceived);
+  const recvDay = new Date(recv.getFullYear(), recv.getMonth(), recv.getDate());
+  const de = Math.round((today - recvDay) / 86400000);
   const dr = (s.slaDays || 14) - de;
   return { de, dr, isLate: dr < 0 };
 };
