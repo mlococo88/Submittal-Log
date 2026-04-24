@@ -716,7 +716,7 @@ function App() {
 
               {/* SLA strip */}
               <div className="card" style={{ padding:'10px 16px', display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'.06em', textTransform:'uppercase', marginRight:12, whiteSpace:'nowrap' }}>SLA Status</span>
+                <span style={{ fontSize:11, fontWeight:700, color:'#64748b', letterSpacing:'.06em', textTransform:'uppercase', marginRight:12, whiteSpace:'nowrap' }}>Review Period</span>
                 {[
                   { k:'on-track', label:'On Track',  n:slaCounts.onTrack, dot:'#16a34a', bg:'#f0fdf4', border:'#bbf7d0', fg:'#14532d' },
                   { k:'at-risk',  label:'At Risk',   n:slaCounts.atRisk,  dot:'#d97706', bg:'#fffbeb', border:'#fde68a', fg:'#78350f' },
@@ -831,7 +831,7 @@ function App() {
                               <td className="td">
                                 <div style={{ fontSize:11, color:'#475569', lineHeight:1.9 }}>
                                   <div><span style={{ color:'#94a3b8', display:'inline-block', width:52 }}>Received</span><span style={{ fontWeight:500 }}>{fmtDate(sub.dateReceived)}</span></div>
-                                  <div><span style={{ color:'#94a3b8', display:'inline-block', width:52 }}>SLA</span><span style={{ fontWeight:500 }}>{sub.slaDays}d</span></div>
+                                  <div><span style={{ color:'#94a3b8', display:'inline-block', width:52 }}>Period</span><span style={{ fontWeight:500 }}>{sub.slaDays}d</span></div>
                                   <div><span style={{ color:'#94a3b8', display:'inline-block', width:52 }}>Due</span><span style={{ fontWeight:600, color: isLate ? '#dc2626' : '#1e293b' }}>{fmtDate(sub.dueDate)}</span></div>
                                 </div>
                               </td>
@@ -1154,7 +1154,7 @@ function App() {
               { label:'Total Active', val: active.length, sub:'excluding Sent Out' },
               { label:'Overdue', val: overdue.length, sub:'past SLA deadline', alert: overdue.length > 0 },
               { label:'Avg Age (Days)', val: avgAge, sub:'across active items' },
-              { label:'SLA Breach Rate', val: `${pct}%`, sub:'of total active' },
+              { label:'Breach Rate', val: `${pct}%`, sub:'exceeding review period' },
             ];
             return (
               <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
