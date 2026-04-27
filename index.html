@@ -281,6 +281,8 @@ function App() {
   const [iDocs, setIDocs]                 = useState('');
   const [iFile, setIFile]                 = useState(null);
   const [outFile, setOutFile]             = useState(null);
+  const [intakeDrag, setIntakeDrag]       = useState(false);
+  const [detailDrag, setDetailDrag]       = useState(false);
   const [toast, setToast]                 = useState(null);
   const activeIdRef = useRef(null);
 
@@ -442,8 +444,13 @@ function App() {
     setUploading(true); setProgress(0);
     try {
       const ext = outFile.name.split('.').pop();
-      const url = await uploadFile(outFile, `projects/${activeRec.projectId}/${activeModule}/${activeRec.id}/Markups_Rev${activeRec.revision}.${ext}`);
-      await db.collection(activeModule).doc(activeRec.id).update({ outgoingPdfRef: url, outgoingFileName: outFile.name, history: AU({ timestamp: new Date().toISOString(), action: `Uploaded Redlined Response (${outFile.name})`, user: activeUser.name }) });
+      const ts = Date.now();
+      const url = await uploadFile(outFile, `projects/${activeRec.projectId}/${activeModule}/${activeRec.id}/Markups_${ts}.${ext}`);
+      const entry = { url, name: outFile.name, uploadedAt: new Date().toISOString(), uploadedBy: activeUser.name };
+      await db.collection(activeModule).doc(activeRec.id).update({
+        outgoingFiles: AU(entry),
+        history: AU({ timestamp: new Date().toISOString(), action: `Uploaded Redline: ${outFile.name}`, user: activeUser.name })
+      });
       showToast('Markups uploaded.'); setOutFile(null);
     } catch { showToast('Upload failed.', 'error'); }
     finally { setUploading(false); setProgress(0); }
@@ -923,7 +930,14 @@ function App() {
                     </div>
                     <div style={{ borderTop:'1px solid #f1f5f9', paddingTop:14 }}>
                       <FL>Incoming PDF Package</FL>
-                      <div style={{ marginTop:6, border:'1px dashed #cbd5e1', borderRadius:5, padding:18, textAlign:'center', background:'#f8fafc', cursor:'pointer' }} onClick={() => document.getElementById('intake-file').click()}>
+                      <div
+                        style={{ marginTop:6, border:`2px dashed ${intakeDrag ? '#3b82f6' : '#cbd5e1'}`, borderRadius:5, padding:18, textAlign:'center', background: intakeDrag ? '#eff6ff' : '#f8fafc', cursor:'pointer', transition:'all .15s' }}
+                        onClick={() => document.getElementById('intake-file').click()}
+                        onDragOver={e => { e.preventDefault(); setIntakeDrag(true); }}
+                        onDragEnter={e => { e.preventDefault(); setIntakeDrag(true); }}
+                        onDragLeave={() => setIntakeDrag(false)}
+                        onDrop={e => { e.preventDefault(); setIntakeDrag(false); const f = e.dataTransfer.files[0]; if (f && f.type === 'application/pdf') setIFile(f); else showToast('Please drop a PDF file.', 'error'); }}
+                      >
                         <ICloud size={22} style={{ color:'#cbd5e1', margin:'0 auto 8px', display:'block' }}/>
                         <div style={{ fontSize:12, color:'#64748b' }}>{iFile ? <span style={{ color:'#2563eb', fontWeight:600 }}>{iFile.name}</span> : <><span style={{ color:'#2563eb', fontWeight:600 }}>Choose a file</span> or drag &amp; drop</>}</div>
                         <div style={{ fontSize:11, color:'#94a3b8', marginTop:3 }}>PDF up to 50MB</div>
@@ -1029,12 +1043,26 @@ function App() {
                           <a href={activeRec.incomingPdfRef} target="_blank" rel="noreferrer" style={{ color:'#2563eb', display:'flex', flexShrink:0 }}><IDl size={14}/></a>
                         </div>
                       ) : <p style={{ fontSize:12, color:'#94a3b8', fontStyle:'italic', margin:0 }}>No incoming file.</p>}
-                      {activeRec.outgoingPdfRef && (
+                      {/* Legacy single-file support */}
+                      {activeRec.outgoingPdfRef && !(activeRec.outgoingFiles?.length > 0) && (
                         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 10px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:5 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:7, overflow:'hidden' }}><ICheck size={14} style={{ color:'#16a34a', flexShrink:0 }}/><span style={{ fontSize:12, color:'#166534', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500 }}>{activeRec.outgoingFileName || 'Marked Up Final'}</span></div>
                           <a href={activeRec.outgoingPdfRef} target="_blank" rel="noreferrer" style={{ color:'#16a34a', display:'flex', flexShrink:0 }}><IDl size={14}/></a>
                         </div>
                       )}
+                      {/* Multi-file redlines */}
+                      {(activeRec.outgoingFiles || []).map((f, i) => (
+                        <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 10px', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:5 }}>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:7, overflow:'hidden' }}>
+                              <ICheck size={14} style={{ color:'#16a34a', flexShrink:0 }}/>
+                              <span style={{ fontSize:12, color:'#166534', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500 }}>{f.name}</span>
+                            </div>
+                            <div style={{ fontSize:10, color:'#94a3b8', marginTop:2, paddingLeft:21 }}>{f.uploadedBy} · {fmtDate(f.uploadedAt)}</div>
+                          </div>
+                          <a href={f.url} target="_blank" rel="noreferrer" style={{ color:'#16a34a', display:'flex', flexShrink:0, marginLeft:8 }}><IDl size={14}/></a>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -1102,13 +1130,32 @@ function App() {
                           </select>
                         </div>
                         <div>
-                          <FL>Upload Redlined Response</FL>
-                          <div style={{ display:'flex', gap:8, alignItems:'center', marginTop:2 }}>
-                            <input type="file" accept="application/pdf" onChange={e => setOutFile(e.target.files[0])} style={{ fontSize:11, color:'#475569', flex:1, minWidth:0 }}/>
-                            <button onClick={doOutgoing} disabled={!outFile || uploading} className="btn-s" style={{ fontSize:11, whiteSpace:'nowrap', padding:'5px 10px' }}>
-                              {uploading ? `${progress}%…` : 'Upload'}
-                            </button>
+                          <FL>Upload Redline / Markups</FL>
+                          <div
+                            style={{ marginTop:6, border:`2px dashed ${detailDrag ? '#3b82f6' : '#cbd5e1'}`, borderRadius:5, padding:'14px 12px', textAlign:'center', background: detailDrag ? '#eff6ff' : '#f8fafc', transition:'all .15s', cursor:'pointer' }}
+                            onClick={() => document.getElementById('detail-file').click()}
+                            onDragOver={e => { e.preventDefault(); setDetailDrag(true); }}
+                            onDragEnter={e => { e.preventDefault(); setDetailDrag(true); }}
+                            onDragLeave={() => setDetailDrag(false)}
+                            onDrop={e => { e.preventDefault(); setDetailDrag(false); const f = e.dataTransfer.files[0]; if (f && f.type === 'application/pdf') setOutFile(f); else showToast('Please drop a PDF file.', 'error'); }}
+                          >
+                            <ICloud size={18} style={{ color: detailDrag ? '#3b82f6' : '#cbd5e1', margin:'0 auto 6px', display:'block' }}/>
+                            <div style={{ fontSize:12, color:'#64748b' }}>
+                              {outFile
+                                ? <span style={{ color:'#2563eb', fontWeight:600 }}>{outFile.name}</span>
+                                : <><span style={{ color:'#2563eb', fontWeight:600 }}>Choose a file</span> or drag &amp; drop</>}
+                            </div>
+                            <div style={{ fontSize:10, color:'#94a3b8', marginTop:2 }}>PDF only — multiple uploads allowed</div>
+                            <input id="detail-file" type="file" style={{ display:'none' }} accept="application/pdf" onChange={e => setOutFile(e.target.files[0])}/>
                           </div>
+                          {outFile && (
+                            <div style={{ display:'flex', justifyContent:'flex-end', gap:8, marginTop:8 }}>
+                              <button className="btn-s" style={{ fontSize:11 }} onClick={() => setOutFile(null)}>Clear</button>
+                              <button onClick={doOutgoing} disabled={uploading} className="btn-p" style={{ fontSize:11 }}>
+                                {uploading ? `Uploading ${progress}%…` : 'Upload Redline'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
