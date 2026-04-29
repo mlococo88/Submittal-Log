@@ -684,7 +684,8 @@ function App() {
                           <SortTh label="Timeline" field="dueDate" style={{minWidth:140}}/>
                           <th className="th" style={{minWidth:150}}>Routing / BIC</th>
                           <SortTh label="Aging" field="dateReceived" style={{minWidth:90}}/>
-                          <th className="th" style={{width:80}}></th>
+                          <th className="th" style={{minWidth:200}}>Comments</th>
+                          <th className="th" style={{width:60}}></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -697,7 +698,7 @@ function App() {
                                   {termMod} Thread · {sub.cnt} record{sub.cnt>1?'s':''}{!activeProjectId&&` · ${sub.projectName}`}
                                 </div>
                               </td>
-                              <td colSpan="4" className="td" style={{paddingTop:8,paddingBottom:8}}></td>
+                              <td colSpan="5" className="td" style={{paddingTop:8,paddingBottom:8}}></td>
                             </tr>
                           );
                           const{de,dr,isLate}=getSla(sub);
@@ -751,6 +752,23 @@ function App() {
                               <td className="td">
                                 <div style={{fontSize:12,fontWeight:600,color:isLate?'#dc2626':'#475569',display:'flex',alignItems:'center',gap:4}}><IClock size={13}/>{de}d</div>
                                 <div style={{fontSize:11,fontWeight:700,marginTop:3,color:isLate?'#dc2626':dr<=3?'#d97706':'#16a34a'}}>{isLate?`${Math.abs(dr)}d over`:`${dr}d left`}</div>
+                              </td>
+                              <td className="td" style={{cursor:'pointer'}} onClick={()=>setQuickModal(sub)}>
+                                {(!sub.comments||sub.comments.length===0) ? (
+                                  <span style={{fontSize:11,color:'#cbd5e1',fontStyle:'italic'}}>No comments</span>
+                                ) : (() => {
+                                  const latest = [...sub.comments].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0];
+                                  return (
+                                    <div>
+                                      <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                                        <span style={{fontSize:10,fontWeight:700,background:'#dbeafe',color:'#1d4ed8',padding:'1px 7px',borderRadius:8,display:'inline-flex',alignItems:'center',gap:4}}><IMsg size={9}/>{sub.comments.length}</span>
+                                        <span style={{fontSize:10,color:'#94a3b8'}}>{fmtDate(latest.timestamp)}</span>
+                                      </div>
+                                      <div style={{fontSize:11,fontWeight:600,color:'#334155',marginBottom:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{latest.user}</div>
+                                      <div style={{fontSize:11,color:'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{latest.text}</div>
+                                    </div>
+                                  );
+                                })()}
                               </td>
                               <td className="td" style={{textAlign:'right'}}>
                                 <div className="row-acts" style={{display:'flex',justifyContent:'flex-end',gap:4}}>
@@ -1087,21 +1105,41 @@ function App() {
       {/* Quick comment modal */}
       {quickModal&&(
         <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:999,padding:20}}>
-          <div className="card" style={{width:'100%',maxWidth:420,overflow:'hidden'}}>
-            <div style={{padding:'12px 16px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-              <div style={{display:'flex',alignItems:'center',gap:8}}><IMsg size={14} style={{color:'#3b82f6'}}/><span style={{fontWeight:700,fontSize:13,color:'#0f172a'}}>Quick Comment</span></div>
+          <div className="card" style={{width:'100%',maxWidth:480,overflow:'hidden',display:'flex',flexDirection:'column',maxHeight:'80vh'}}>
+            {/* Header */}
+            <div style={{padding:'12px 16px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:8}}><IMsg size={14} style={{color:'#3b82f6'}}/><span style={{fontWeight:700,fontSize:13,color:'#0f172a'}}>Discussion</span></div>
               <button onClick={()=>setQuickModal(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',display:'flex'}}><IX size={15}/></button>
             </div>
-            <div style={{padding:16}}>
-              <div style={{background:'#f8fafc',borderRadius:5,padding:'8px 10px',marginBottom:14}}>
-                <div style={{fontSize:12,fontWeight:600,color:'#334155'}}>{quickModal.title}</div>
-                <div style={{fontSize:11,color:'#94a3b8',marginTop:2,fontFamily:'monospace'}}>{quickModal.id} · {termRev} {quickModal.revision}</div>
-              </div>
-              <form onSubmit={addQuickComment} style={{display:'flex',flexDirection:'column',gap:10}}>
-                <textarea autoFocus className="inp" rows="4" placeholder="Type your note…" value={quickText} onChange={e=>setQuickText(e.target.value)} style={{resize:'none',fontSize:13}}></textarea>
+            {/* Record info */}
+            <div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',background:'#f8fafc',flexShrink:0}}>
+              <div style={{fontSize:12,fontWeight:600,color:'#334155'}}>{quickModal.title}</div>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:2,fontFamily:'monospace'}}>{quickModal.id} · {termRev} {quickModal.revision}</div>
+            </div>
+            {/* Scrollable comments list */}
+            <div style={{flex:1,overflowY:'auto',padding:'10px 16px',display:'flex',flexDirection:'column',gap:8,minHeight:0}}>
+              {(!quickModal.comments||quickModal.comments.length===0) ? (
+                <div style={{textAlign:'center',padding:'24px 0',color:'#94a3b8',fontSize:12,fontStyle:'italic'}}>No comments yet — be the first to add a note.</div>
+              ) : (
+                [...quickModal.comments].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)).map(c=>(
+                  <div key={c.id} style={{background:'#f8fafc',borderRadius:5,padding:'8px 10px',border:'1px solid #f1f5f9'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                      <span style={{fontSize:11,fontWeight:700,color:'#334155'}}>{c.user}</span>
+                      <span style={{fontSize:10,color:'#94a3b8',whiteSpace:'nowrap',marginLeft:8}}>{fmtDate(c.timestamp)} {fmtTime(c.timestamp)}</span>
+                    </div>
+                    <p style={{fontSize:12,color:'#475569',whiteSpace:'pre-wrap',lineHeight:1.5,margin:0}}>{c.text}</p>
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Add comment form */}
+            <div style={{padding:'10px 16px',borderTop:'1px solid #f1f5f9',flexShrink:0}}>
+              <form onSubmit={addQuickComment} style={{display:'flex',flexDirection:'column',gap:8}}>
+                <textarea autoFocus className="inp" rows="3" placeholder="Add a note…" value={quickText} onChange={e=>setQuickText(e.target.value)} style={{resize:'none',fontSize:13}}
+                  onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addQuickComment(e);}}}></textarea>
                 <div style={{display:'flex',justifyContent:'flex-end',gap:8}}>
-                  <button type="button" className="btn-s" style={{fontSize:12}} onClick={()=>setQuickModal(null)}>Cancel</button>
-                  <button type="submit" disabled={!quickText.trim()} className="btn-p" style={{fontSize:12}}>Save Note</button>
+                  <button type="button" className="btn-s" style={{fontSize:12}} onClick={()=>{setQuickModal(null);setQuickText('');}}>Close</button>
+                  <button type="submit" disabled={!quickText.trim()} className="btn-p" style={{fontSize:12}}>Post Note</button>
                 </div>
               </form>
             </div>
