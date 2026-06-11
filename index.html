@@ -23,11 +23,9 @@
     .fl { display:block; font-size:11px; font-weight:600; color:#64748b; letter-spacing:.05em; text-transform:uppercase; margin-bottom:5px; }
     .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:3px; font-size:11px; font-weight:600; border:1px solid; }
     .btn-p { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; background:#2563eb; color:#fff; border-radius:5px; font-size:13px; font-weight:500; border:none; cursor:pointer; }
-    .btn-p:hover { background:#1d4ed8; }
-    .btn-p:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-p:hover { background:#1d4ed8; } .btn-p:disabled { opacity:.5; cursor:not-allowed; }
     .btn-s { display:inline-flex; align-items:center; gap:6px; padding:7px 12px; background:#fff; color:#475569; border-radius:5px; font-size:13px; font-weight:500; border:1px solid #e2e8f0; cursor:pointer; }
-    .btn-s:hover { background:#f8fafc; }
-    .btn-s:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-s:hover { background:#f8fafc; } .btn-s:disabled { opacity:.5; cursor:not-allowed; }
     .sb-link { display:flex; align-items:center; gap:10px; padding:7px 12px; border-radius:5px; font-size:13px; font-weight:500; color:#94a3b8; cursor:pointer; user-select:none; transition:all .15s; }
     .sb-link:hover { background:rgba(255,255,255,.07); color:#f1f5f9; }
     .sb-link.active { background:rgba(59,130,246,.2); color:#93c5fd; }
@@ -49,12 +47,10 @@
 const { useState, useEffect, useRef, useMemo } = React;
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
-const Svg = ({ children, size = 16, className = '', style = {} }) => (
+const Svg = ({ children, size=16, style={} }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    className={className} style={{ flexShrink:0, display:'inline-block', ...style }}>
-    {children}
-  </svg>
+    style={{ flexShrink:0, display:'inline-block', ...style }}>{children}</svg>
 );
 const ILayers  = p => <Svg {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Svg>;
 const IFileQ   = p => <Svg {...p}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 10.3c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.4.5.8.5 1.3 0 1.3-2 2-2 2"/><circle cx="12" cy="17" r="1"/></Svg>;
@@ -94,15 +90,30 @@ if (!firebase.apps.length) firebase.initializeApp(FC);
 const auth = firebase.auth(), db = firebase.firestore(), storage = firebase.storage();
 const AU = firebase.firestore.FieldValue.arrayUnion;
 
+// ── Constants ─────────────────────────────────────────────────────────────────
 const INT_STATUSES = ['Unassigned','Assigned','In Review','Ready for PM Approval','Sent Out'];
 const EXT_STATUSES = {
   submittals: ['Pending','Approved','Approved as Noted','Revise & Resubmit','Rejected','Information Only'],
   rfis: ['Pending','Answered','Clarification Requested','Closed']
 };
 const BIC_OPTS = ['—','Contractor','EOR','PM','QC','Owner'];
-const INT_STYLE = { 'Sent Out':{background:'#f0fdf4',color:'#166534',borderColor:'#bbf7d0'}, 'In Review':{background:'#eff6ff',color:'#1e40af',borderColor:'#bfdbfe'}, 'Ready for PM Approval':{background:'#f5f3ff',color:'#5b21b6',borderColor:'#ddd6fe'}, 'Assigned':{background:'#eff6ff',color:'#1d4ed8',borderColor:'#bfdbfe'}, 'Unassigned':{background:'#f8fafc',color:'#475569',borderColor:'#e2e8f0'} };
-const BIC_STYLE = { 'Contractor':{background:'#fff7ed',color:'#9a3412',borderColor:'#fed7aa'}, 'EOR':{background:'#eff6ff',color:'#1e40af',borderColor:'#bfdbfe'}, 'PM':{background:'#f5f3ff',color:'#5b21b6',borderColor:'#ddd6fe'}, 'QC':{background:'#eef2ff',color:'#3730a3',borderColor:'#c7d2fe'}, 'Owner':{background:'#f0fdf4',color:'#166534',borderColor:'#bbf7d0'}, '—':{background:'#f8fafc',color:'#64748b',borderColor:'#e2e8f0'} };
+const INT_STYLE = {
+  'Sent Out':              { background:'#f0fdf4', color:'#166534', borderColor:'#bbf7d0' },
+  'In Review':             { background:'#eff6ff', color:'#1e40af', borderColor:'#bfdbfe' },
+  'Ready for PM Approval': { background:'#f5f3ff', color:'#5b21b6', borderColor:'#ddd6fe' },
+  'Assigned':              { background:'#eff6ff', color:'#1d4ed8', borderColor:'#bfdbfe' },
+  'Unassigned':            { background:'#f8fafc', color:'#475569', borderColor:'#e2e8f0' },
+};
+const BIC_STYLE = {
+  'Contractor': { background:'#fff7ed', color:'#9a3412', borderColor:'#fed7aa' },
+  'EOR':        { background:'#eff6ff', color:'#1e40af', borderColor:'#bfdbfe' },
+  'PM':         { background:'#f5f3ff', color:'#5b21b6', borderColor:'#ddd6fe' },
+  'QC':         { background:'#eef2ff', color:'#3730a3', borderColor:'#c7d2fe' },
+  'Owner':      { background:'#f0fdf4', color:'#166534', borderColor:'#bbf7d0' },
+  '—':          { background:'#f8fafc', color:'#64748b', borderColor:'#e2e8f0' },
+};
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 const fmtTime = d => new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 const getSla  = s => {
@@ -112,9 +123,14 @@ const getSla  = s => {
   const dr = (s.slaDays || 14) - de;
   return { de, dr, isLate: dr < 0 };
 };
+const dueDateStr = days => {
+  const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+};
 
 const FL = ({ children }) => <label className="fl">{children}</label>;
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ toast, dismiss }) => {
   if (!toast) return null;
   const isErr = toast.type === 'error';
@@ -129,9 +145,9 @@ const Toast = ({ toast, dismiss }) => {
   );
 };
 
-// ── CST Logo SVG ──────────────────────────────────────────────────────────────
-const CSTLogo = ({ size = 34 }) => (
-  <svg width={size} height={size} viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink:0 }}>
+// ── CST Logo ──────────────────────────────────────────────────────────────────
+const CSTLogo = ({ size=34 }) => (
+  <svg width={size} height={size} viewBox="0 0 34 34" fill="none" style={{ flexShrink:0 }}>
     <rect width="34" height="34" rx="7" fill="#1e3a8a"/>
     <path d="M9 7h11l5 5v15a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="white" fillOpacity="0.1" stroke="white" strokeWidth="1.2"/>
     <path d="M20 7l5 5h-4a1 1 0 0 1-1-1V7z" fill="white" fillOpacity="0.22"/>
@@ -148,11 +164,8 @@ const Sidebar = ({ activeModule, setActiveModule, currentView, setCurrentView, i
   const myQ = activeRecords.filter(s => s.assignedTo === activeUser.name && s.internalStatus !== 'Sent Out' && (!activeProjectId || s.projectId === activeProjectId)).length;
   const totalActive = activeRecords.filter(s => s.internalStatus !== 'Sent Out' && (!activeProjectId || s.projectId === activeProjectId)).length;
   const modActive = m => activeModule === m && currentView !== 'projects' && currentView !== 'team';
-
   return (
     <aside style={{ width:230, minWidth:230, background:'#0f172a', display:'flex', flexDirection:'column', height:'100vh', position:'sticky', top:0, flexShrink:0 }}>
-
-      {/* Logo */}
       <div style={{ padding:'16px 14px 12px', borderBottom:'1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }} onClick={() => setCurrentView('dashboard')}>
           <CSTLogo size={34}/>
@@ -162,18 +175,11 @@ const Sidebar = ({ activeModule, setActiveModule, currentView, setCurrentView, i
           </div>
         </div>
       </div>
-
-      {/* ── Project selector ── */}
       <div style={{ padding:'12px 12px 0' }}>
-        <div className="sb-sect" style={{ padding:'0 0 6px', display:'flex', alignItems:'center', gap:6 }}>
-          <IFolder size={10} style={{ color:'#475569' }}/> Project
-        </div>
+        <div className="sb-sect" style={{ padding:'0 0 6px', display:'flex', alignItems:'center', gap:6 }}><IFolder size={10} style={{ color:'#475569' }}/> Project</div>
         <div style={{ position:'relative' }}>
-          <select
-            value={activeProjectId}
-            onChange={e => setActiveProjectId(e.target.value)}
-            style={{ width:'100%', background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)', borderRadius:6, padding:'7px 28px 7px 10px', fontSize:12, fontWeight:600, color: activeProjectId ? '#e2e8f0' : '#64748b', cursor:'pointer', outline:'none', appearance:'none', WebkitAppearance:'none' }}
-          >
+          <select value={activeProjectId} onChange={e => setActiveProjectId(e.target.value)}
+            style={{ width:'100%', background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.1)', borderRadius:6, padding:'7px 28px 7px 10px', fontSize:12, fontWeight:600, color:activeProjectId?'#e2e8f0':'#64748b', cursor:'pointer', outline:'none', appearance:'none', WebkitAppearance:'none' }}>
             <option value="">All Projects</option>
             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
@@ -186,41 +192,26 @@ const Sidebar = ({ activeModule, setActiveModule, currentView, setCurrentView, i
           </button>
         )}
       </div>
-
-      {/* Module */}
       <div style={{ padding:'8px 12px 0' }}>
         <div className="sb-sect">Module</div>
-        {[
-          { m:'submittals', label:'Submittals', icon:<ILayers size={14}/>, count:totalActive },
-          { m:'rfis',       label:'RFIs',       icon:<IFileQ size={14}/> },
-        ].map(({ m, label, icon, count }) => (
-          <div key={m} className={`sb-link ${modActive(m) ? 'active' : ''}`} onClick={() => { setActiveModule(m); setCurrentView('dashboard'); }}>
+        {[{m:'submittals',label:'Submittals',icon:<ILayers size={14}/>,count:totalActive},{m:'rfis',label:'RFIs',icon:<IFileQ size={14}/>}].map(({m,label,icon,count}) => (
+          <div key={m} className={`sb-link ${modActive(m)?'active':''}`} onClick={() => { setActiveModule(m); setCurrentView('dashboard'); }}>
             {icon} {label}
             {count != null && <span style={{ marginLeft:'auto', fontSize:11, background:'rgba(255,255,255,.1)', color:'#94a3b8', padding:'1px 7px', borderRadius:10 }}>{count}</span>}
           </div>
         ))}
       </div>
-
-      {/* Nav */}
       <nav style={{ padding:'0 12px', flex:1 }}>
         <div className="sb-sect">Views</div>
-        <div className={`sb-link ${currentView==='dashboard' ? 'active' : ''}`} onClick={() => setCurrentView('dashboard')}>
+        <div className={`sb-link ${currentView==='dashboard'?'active':''}`} onClick={() => setCurrentView('dashboard')}>
           <IBar size={14}/> Register
           {myQ > 0 && <span style={{ marginLeft:'auto', fontSize:10, background:'#2563eb', color:'#fff', padding:'1px 7px', borderRadius:10, fontWeight:700 }}>{myQ}</span>}
         </div>
-        <div className={`sb-link ${currentView==='analytics' ? 'active' : ''}`} onClick={() => setCurrentView('analytics')}>
-          <IBar size={14}/> Analytics
-        </div>
+        <div className={`sb-link ${currentView==='analytics'?'active':''}`} onClick={() => setCurrentView('analytics')}><IBar size={14}/> Analytics</div>
         <div className="sb-sect" style={{ marginTop:8 }}>Administration</div>
-        <div className={`sb-link ${currentView==='projects' ? 'active' : ''}`} onClick={() => setCurrentView('projects')}>
-          <IBrief size={14}/> Projects
-        </div>
-        <div className={`sb-link ${currentView==='team' ? 'active' : ''}`} onClick={() => setCurrentView('team')}>
-          <IUsers size={14}/> Team
-        </div>
+        <div className={`sb-link ${currentView==='projects'?'active':''}`} onClick={() => setCurrentView('projects')}><IBrief size={14}/> Projects</div>
+        <div className={`sb-link ${currentView==='team'?'active':''}`} onClick={() => setCurrentView('team')}><IUsers size={14}/> Team</div>
       </nav>
-
-      {/* User */}
       <div style={{ padding:'12px', borderTop:'1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <div style={{ width:30, height:30, borderRadius:'50%', background:'#1e3a5f', border:'2px solid #2563eb', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'#60a5fa', flexShrink:0 }}>
@@ -230,7 +221,7 @@ const Sidebar = ({ activeModule, setActiveModule, currentView, setCurrentView, i
             <div style={{ fontSize:12, fontWeight:600, color:'#e2e8f0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{activeUser.name}</div>
             <div style={{ fontSize:10, color:'#475569', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</div>
           </div>
-          <button onClick={doLogout} title="Sign out" style={{ background:'none', border:'none', cursor:'pointer', color:'#475569', padding:4, borderRadius:4, display:'flex', transition:'color .15s' }}
+          <button onClick={doLogout} style={{ background:'none', border:'none', cursor:'pointer', color:'#475569', padding:4, borderRadius:4, display:'flex', transition:'color .15s' }}
             onMouseOver={e => e.currentTarget.style.color='#f87171'} onMouseOut={e => e.currentTarget.style.color='#475569'}>
             <ILogout size={14}/>
           </button>
@@ -242,74 +233,77 @@ const Sidebar = ({ activeModule, setActiveModule, currentView, setCurrentView, i
 
 // ── App ───────────────────────────────────────────────────────────────────────
 function App() {
-  const [user,setUser]                 = useState(null);
-  const [authLoading,setAuthLoading]   = useState(true);
-  const [authMode,setAuthMode]         = useState('login');
-  const [authEmail,setAuthEmail]       = useState('');
-  const [authPw,setAuthPw]             = useState('');
-  const [activeModule,setActiveModule] = useState('submittals');
-  const [currentView,setCurrentView]   = useState('dashboard');
-  const [activeRec,setActiveRec]       = useState(null);
-  const [records,setRecords]           = useState([]);
-  const [projects,setProjects]         = useState([]);
-  const [team,setTeam]                 = useState([]);
-  const [loading,setLoading]           = useState(true);
-  const [uploading,setUploading]       = useState(false);
-  const [progress,setProgress]         = useState(0);
-  const [searchQ,setSearchQ]           = useState('');
-  const [tab,setTab]                   = useState('all');
+  // ── Auth state ──────────────────────────────────────────────────────────────
+  const [user,setUser]               = useState(null);
+  const [authLoading,setAuthLoading] = useState(true);
+  const [authMode,setAuthMode]       = useState('login');
+  const [authEmail,setAuthEmail]     = useState('');
+  const [authPw,setAuthPw]           = useState('');
 
-  // Global project context
+  // ── Navigation ──────────────────────────────────────────────────────────────
+  const [activeModule,setActiveModule]       = useState('submittals');
+  const [currentView,setCurrentView]         = useState('dashboard');
+  const [activeRec,setActiveRec]             = useState(null);
   const [activeProjectId,setActiveProjectId] = useState('');
 
-  // Additional filters (no project filter here — handled by sidebar)
-  const [showFilters,setShowFilters]   = useState(false);
-  const [fIntSt,setFIntSt]             = useState('');
-  const [fExtSt,setFExtSt]             = useState('');
-  const [fAssignee,setFAssignee]       = useState('');
-  const [fSla,setFSla]                 = useState('');
+  // ── Data ────────────────────────────────────────────────────────────────────
+  const [records,setRecords]   = useState([]);
+  const [projects,setProjects] = useState([]);
+  const [team,setTeam]         = useState([]);
+  const [loading,setLoading]   = useState(true);
 
-  const [sortField,setSortField]       = useState('dateReceived');
-  const [sortDir,setSortDir]           = useState('desc');
-  const [isEditing,setIsEditing]       = useState(false);
-  const [editForm,setEditForm]         = useState({});
-  const [assignedIn,setAssignedIn]     = useState('');
-  const [qcIn,setQcIn]                 = useState('');
-  const [newComment,setNewComment]     = useState('');
-  const [quickModal,setQuickModal]     = useState(null);
-  const [quickText,setQuickText]       = useState('');
-  const [projForm,setProjForm]         = useState({id:'',name:'',client:''});
-  const [editingProj,setEditingProj]   = useState(false);
-  const [teamForm,setTeamForm]         = useState({id:'',name:'',email:'',role:'Structural Engineer'});
-  const [editingTeam,setEditingTeam]   = useState(false);
-  const [iProj,setIProj]               = useState('');
-  const [iType,setIType]               = useState('new');
-  const [iBase,setIBase]               = useState('');
-  const [iTitle,setITitle]             = useState('');
-  const [iSub,setISub]                 = useState('');
-  const [iContr,setIContr]             = useState('');
-  const [iRev,setIRev]                 = useState(0);
-  const [iSla,setISla]                 = useState(14);
-  const [iComp,setIComp]               = useState('');
-  const [iDisc,setIDisc]               = useState('');
-  const [iDocs,setIDocs]               = useState('');
-  const [iFile,setIFile]               = useState(null);
-  const [intakeDrag,setIntakeDrag]     = useState(false);
-  const [outFile,setOutFile]           = useState(null);
-  const [detailDrag,setDetailDrag]     = useState(false);
-  const [toast,setToast]               = useState(null);
+  // ── Upload ──────────────────────────────────────────────────────────────────
+  const [uploading,setUploading] = useState(false);
+  const [progress,setProgress]   = useState(0);
+
+  // ── Dashboard ───────────────────────────────────────────────────────────────
+  const [searchQ,setSearchQ]         = useState('');
+  const [tab,setTab]                 = useState('all');
+  const [showFilters,setShowFilters] = useState(false);
+  const [fIntSt,setFIntSt]           = useState('');
+  const [fExtSt,setFExtSt]           = useState('');
+  const [fAssignee,setFAssignee]     = useState('');
+  const [fSla,setFSla]               = useState('');
+  const [sortField,setSortField]     = useState('dateReceived');
+  const [sortDir,setSortDir]         = useState('desc');
+
+  // ── Detail view ─────────────────────────────────────────────────────────────
+  const [isEditing,setIsEditing]   = useState(false);
+  const [editForm,setEditForm]     = useState({});
+  const [assignedIn,setAssignedIn] = useState('');
+  const [qcIn,setQcIn]             = useState('');
+  const [newComment,setNewComment] = useState('');
+  const [quickModal,setQuickModal] = useState(null);
+  const [quickText,setQuickText]   = useState('');
+  const [outFile,setOutFile]       = useState(null);
+  const [detailDrag,setDetailDrag] = useState(false);
+
+  // ── Admin forms ─────────────────────────────────────────────────────────────
+  const [projForm,setProjForm]     = useState({id:'',name:'',client:''});
+  const [editingProj,setEditingProj] = useState(false);
+  const [teamForm,setTeamForm]     = useState({id:'',name:'',email:'',role:'Structural Engineer'});
+  const [editingTeam,setEditingTeam] = useState(false);
+
+  // ── Intake form ─────────────────────────────────────────────────────────────
+  const [iProj,setIProj]       = useState('');
+  const [iType,setIType]       = useState('new');       // 'new' | 'revision'
+  const [iBase,setIBase]       = useState('');
+  const [iTemplate,setITemplate] = useState('');        // template copy source
+  const [iTitle,setITitle]     = useState('');
+  const [iSub,setISub]         = useState('');
+  const [iContr,setIContr]     = useState('');
+  const [iRev,setIRev]         = useState(0);
+  const [iSla,setISla]         = useState(14);
+  const [iComp,setIComp]       = useState('');
+  const [iDisc,setIDisc]       = useState('');
+  const [iDocs,setIDocs]       = useState('');
+  const [iFile,setIFile]       = useState(null);
+  const [intakeDrag,setIntakeDrag] = useState(false);
+
+  const [toast,setToast] = useState(null);
   const activeIdRef = useRef(null);
-  useEffect(() => {
-    if (iTemplate) {
-      const t = records.find(s => s.id === iTemplate);
-      if (t) {
-        setITitle(t.title); setISub(t.subtitle||''); setIContr(t.contractor);
-        setISla(t.slaDays||14); setIComp((t.tags?.components||[]).join(', '));
-        setIDisc((t.tags?.disciplines||[]).join(', ')); setIDocs(t.relatedDocs||'');
-      }
-    }
-  }, [iTemplate]);
 
+  // ── Derived identity ─────────────────────────────────────────────────────────
   useEffect(() => { activeIdRef.current = activeRec?.id ?? null; }, [activeRec]);
 
   const showToast = (msg, type='success') => { setToast({message:msg,type}); setTimeout(()=>setToast(null),3000); };
@@ -324,138 +318,246 @@ function App() {
     const s = new Set(['Unassigned']); s.add(activeUser.name); team.forEach(m=>s.add(m.name)); return Array.from(s);
   }, [activeUser.name, team]);
 
-  useEffect(() => { setAssignedIn(activeRec?.assignedTo??''); setQcIn(activeRec?.qcReviewer??''); }, [activeRec?.id]);
+  // ── Sync routing inputs when record changes ──────────────────────────────────
+  useEffect(() => {
+    setAssignedIn(activeRec?.assignedTo ?? '');
+    setQcIn(activeRec?.qcReviewer ?? '');
+  }, [activeRec?.id]);
 
-  // Reset filters on module switch, but preserve activeProjectId
+  // ── Reset filters on module switch ───────────────────────────────────────────
   useEffect(() => {
     setFIntSt(''); setFExtSt(''); setFAssignee(''); setFSla('');
     setShowFilters(false); setSortField('dateReceived'); setSortDir('desc');
   }, [activeModule]);
 
+  // ── Reset intake form on view change ────────────────────────────────────────
   useEffect(() => {
-    if (currentView==='intake') { setIProj(activeProjectId||''); setIType('new'); setIBase(''); setITitle(''); setISub(''); setIContr(''); setIRev(0); setISla(14); setIComp(''); setIDisc('');       setIDocs(''); setIFile(null); setITemplate(''); setProgress(0); }
-    if (currentView!=='detail') { setIsEditing(false); setNewComment(''); setOutFile(null); setProgress(0); }
-    if (currentView!=='projects') { setProjForm({id:'',name:'',client:''}); setEditingProj(false); }
-    if (currentView!=='team') { setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'}); setEditingTeam(false); }
+    if (currentView === 'intake') {
+      setIProj(activeProjectId||''); setIType('new'); setIBase(''); setITemplate('');
+      setITitle(''); setISub(''); setIContr(''); setIRev(0); setISla(14);
+      setIComp(''); setIDisc(''); setIDocs(''); setIFile(null); setProgress(0);
+    }
+    if (currentView !== 'detail') { setIsEditing(false); setNewComment(''); setOutFile(null); setProgress(0); }
+    if (currentView !== 'projects') { setProjForm({id:'',name:'',client:''}); setEditingProj(false); }
+    if (currentView !== 'team') { setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'}); setEditingTeam(false); }
   }, [currentView, activeModule]);
 
+  // ── Template autofill ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (iType==='revision'&&iBase) { const b=records.find(s=>s.id===iBase); if(b){setITitle(b.title);setISub(b.subtitle||'');setIContr(b.contractor);setIRev(Number(b.revision)+1);setISla(b.slaDays||14);setIDocs(b.relatedDocs||'');} }
-  }, [iType, iBase, records]);
+    if (!iTemplate) return;
+    const t = records.find(s => s.id === iTemplate);
+    if (t) {
+      setITitle(t.title); setISub(t.subtitle||''); setIContr(t.contractor);
+      setISla(t.slaDays||14); setIComp((t.tags?.components||[]).join(', '));
+      setIDisc((t.tags?.disciplines||[]).join(', ')); setIDocs(t.relatedDocs||'');
+    }
+  }, [iTemplate]);
 
-  useEffect(() => { const u=auth.onAuthStateChanged(u=>{setUser(u);setAuthLoading(false);}); return()=>u(); }, []);
+  // ── Revision autofill ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (iType !== 'revision' || !iBase) return;
+    const b = records.find(s => s.id === iBase);
+    if (b) {
+      setITitle(b.title); setISub(b.subtitle||''); setIContr(b.contractor);
+      setIRev(Number(b.revision)+1); setISla(b.slaDays||14); setIDocs(b.relatedDocs||'');
+    }
+  }, [iType, iBase]);
+
+  // ── Auth ──────────────────────────────────────────────────────────────────────
+  useEffect(() => { const u = auth.onAuthStateChanged(u=>{setUser(u);setAuthLoading(false);}); return()=>u(); }, []);
 
   const doAuth = async e => {
     e.preventDefault(); setAuthLoading(true);
-    try { if(authMode==='login'){await auth.signInWithEmailAndPassword(authEmail,authPw);showToast('Signed in.');}else{await auth.createUserWithEmailAndPassword(authEmail,authPw);showToast('Account created.');} }
-    catch(err){showToast(err.message,'error');} finally{setAuthLoading(false);}
+    try {
+      if (authMode==='login') { await auth.signInWithEmailAndPassword(authEmail,authPw); showToast('Signed in.'); }
+      else { await auth.createUserWithEmailAndPassword(authEmail,authPw); showToast('Account created.'); }
+    } catch(err) { showToast(err.message,'error'); }
+    finally { setAuthLoading(false); }
   };
 
+  // ── Firestore listeners ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!user) return; setLoading(true);
-    const r = db.collection(activeModule).onSnapshot(snap=>{
-      const d=snap.docs.map(x=>({id:x.id,...x.data()})); d.sort((a,b)=>new Date(b.dateReceived)-new Date(a.dateReceived));
-      setRecords(d); if(activeIdRef.current){const u=d.find(s=>s.id===activeIdRef.current);if(u)setActiveRec(u);} setLoading(false);
-    },err=>{console.error(err);setLoading(false);});
-    const p=db.collection('projects').onSnapshot(snap=>{const d=snap.docs.map(x=>({id:x.id,...x.data()}));d.sort((a,b)=>a.name.localeCompare(b.name));setProjects(d);});
-    const t=db.collection('teamMembers').onSnapshot(snap=>{const d=snap.docs.map(x=>({id:x.id,...x.data()}));d.sort((a,b)=>a.name.localeCompare(b.name));setTeam(d);});
-    return()=>{r();p();t();};
+    const r = db.collection(activeModule).onSnapshot(snap => {
+      const d = snap.docs.map(x=>({id:x.id,...x.data()}));
+      d.sort((a,b)=>new Date(b.dateReceived)-new Date(a.dateReceived));
+      setRecords(d);
+      if (activeIdRef.current) { const u=d.find(s=>s.id===activeIdRef.current); if(u) setActiveRec(u); }
+      setLoading(false);
+    }, err => { console.error(err); setLoading(false); });
+    const p = db.collection('projects').onSnapshot(snap => { const d=snap.docs.map(x=>({id:x.id,...x.data()})); d.sort((a,b)=>a.name.localeCompare(b.name)); setProjects(d); });
+    const t = db.collection('teamMembers').onSnapshot(snap => { const d=snap.docs.map(x=>({id:x.id,...x.data()})); d.sort((a,b)=>a.name.localeCompare(b.name)); setTeam(d); });
+    return () => { r(); p(); t(); };
   }, [user, activeModule]);
 
-  const saveProj = async e => { e.preventDefault(); try{if(editingProj){await db.collection('projects').doc(projForm.id).update({name:projForm.name,client:projForm.client});showToast('Updated.');}else{await db.collection('projects').doc(`PRJ-${Date.now().toString().slice(-4)}`).set({name:projForm.name,client:projForm.client,createdAt:new Date().toISOString()});showToast('Project added.');}setProjForm({id:'',name:'',client:''});setEditingProj(false);}catch{showToast('Error.','error');} };
-  const delProj  = async id => { try{await db.collection('projects').doc(id).delete();showToast('Removed.');}catch{showToast('Error.','error');} };
-  const saveTeam = async e => { e.preventDefault(); try{if(editingTeam){await db.collection('teamMembers').doc(teamForm.id).update({name:teamForm.name,email:teamForm.email,role:teamForm.role});showToast('Updated.');}else{await db.collection('teamMembers').doc(`USR-${Date.now().toString().slice(-4)}`).set({name:teamForm.name,email:teamForm.email,role:teamForm.role,createdAt:new Date().toISOString()});showToast('Added.');}setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'});setEditingTeam(false);}catch{showToast('Error.','error');} };
-  const delTeam  = async id => { try{await db.collection('teamMembers').doc(id).delete();showToast('Removed.');}catch{showToast('Error.','error');} };
+  // ── Project CRUD ──────────────────────────────────────────────────────────────
+  const saveProj = async e => {
+    e.preventDefault();
+    try {
+      if (editingProj) { await db.collection('projects').doc(projForm.id).update({name:projForm.name,client:projForm.client}); showToast('Updated.'); }
+      else { await db.collection('projects').doc(`PRJ-${Date.now().toString().slice(-4)}`).set({name:projForm.name,client:projForm.client,createdAt:new Date().toISOString()}); showToast('Project added.'); }
+      setProjForm({id:'',name:'',client:''}); setEditingProj(false);
+    } catch { showToast('Error.','error'); }
+  };
+  const delProj = async id => { try { await db.collection('projects').doc(id).delete(); showToast('Removed.'); } catch { showToast('Error.','error'); } };
 
-  const uploadFile = (file,path) => new Promise((res,rej)=>{
-    const task=storage.ref().child(path).put(file);
-    task.on('state_changed',s=>setProgress(Math.round(s.bytesTransferred/s.totalBytes*100)),err=>rej(err),async()=>{try{res(await task.snapshot.ref.getDownloadURL());}catch(e){rej(e);}});
+  // ── Team CRUD ─────────────────────────────────────────────────────────────────
+  const saveTeam = async e => {
+    e.preventDefault();
+    try {
+      if (editingTeam) { await db.collection('teamMembers').doc(teamForm.id).update({name:teamForm.name,email:teamForm.email,role:teamForm.role}); showToast('Updated.'); }
+      else { await db.collection('teamMembers').doc(`USR-${Date.now().toString().slice(-4)}`).set({name:teamForm.name,email:teamForm.email,role:teamForm.role,createdAt:new Date().toISOString()}); showToast('Added.'); }
+      setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'}); setEditingTeam(false);
+    } catch { showToast('Error.','error'); }
+  };
+  const delTeam = async id => { try { await db.collection('teamMembers').doc(id).delete(); showToast('Removed.'); } catch { showToast('Error.','error'); } };
+
+  // ── File upload ───────────────────────────────────────────────────────────────
+  const uploadFile = (file,path) => new Promise((res,rej) => {
+    const task = storage.ref().child(path).put(file);
+    task.on('state_changed', s=>setProgress(Math.round(s.bytesTransferred/s.totalBytes*100)), err=>rej(err),
+      async () => { try { res(await task.snapshot.ref.getDownloadURL()); } catch(e) { rej(e); } });
   });
 
+  // ── Intake submit ─────────────────────────────────────────────────────────────
   const doIntake = async e => {
-    e.preventDefault(); if(!user)return; setUploading(true); setProgress(0);
-    const pfx=activeModule==='submittals'?'SUB':'RFI'; const rid=`${pfx}-${Date.now().toString().slice(-6)}`; const sla=Number(iSla)||14; let fileUrl=null;
+    e.preventDefault(); if (!user) return;
+    setUploading(true); setProgress(0);
+    const pfx = activeModule==='submittals'?'SUB':'RFI';
+    const rid  = `${pfx}-${Date.now().toString().slice(-6)}`;
+    const sla  = Number(iSla)||14;
+    let fileUrl = null;
     try {
-      if(iFile){const ext=iFile.name.split('.').pop();fileUrl=await uploadFile(iFile,`projects/${iProj}/${activeModule}/${rid}/Incoming_Rev${iRev}.${ext}`);}
-      const tags={components:iComp.split(',').map(s=>s.trim()).filter(Boolean),disciplines:iDisc.split(',').map(s=>s.trim()).filter(Boolean)};
-      const rawA=e.target.elements.assignedTo.value.trim(); const rawB=e.target.elements.ballInCourt.value||'—';
-      await db.collection(activeModule).doc(rid).set({projectId:iProj,projectName:projects.find(p=>p.id===iProj)?.name||'Unknown',title:iTitle,subtitle:iSub||'',contractor:iContr,revision:Number(iRev),baseSubmittalId:iBase||null,dateReceived:new Date().toISOString(),slaDays:sla,dueDate:new Date(Date.now()+sla*86400000).toISOString(),assignedTo:rawA||'Unassigned',ballInCourt:rawB,internalStatus:(!rawA||rawA==='Unassigned')?'Unassigned':'Assigned',externalStatus:'Pending',incomingPdfRef:fileUrl,incomingFileName:iFile?iFile.name:null,outgoingFiles:[],relatedDocs:iDocs.trim(),comments:[],tags,loggedBy:activeUser.name,loggedById:activeUser.id,qcReviewer:'',history:[{timestamp:new Date().toISOString(),action:`Ingested ${activeModule.slice(0,-1)}${iFile?' with attachment':''}`,user:activeUser.name}]});
+      if (iFile) { const ext=iFile.name.split('.').pop(); fileUrl = await uploadFile(iFile,`projects/${iProj}/${activeModule}/${rid}/Incoming_Rev${iRev}.${ext}`); }
+      const tags = { components:iComp.split(',').map(s=>s.trim()).filter(Boolean), disciplines:iDisc.split(',').map(s=>s.trim()).filter(Boolean) };
+      const rawA = e.target.elements.assignedTo.value.trim();
+      const rawB = e.target.elements.ballInCourt.value||'—';
+      await db.collection(activeModule).doc(rid).set({
+        projectId:iProj, projectName:projects.find(p=>p.id===iProj)?.name||'Unknown',
+        title:iTitle, subtitle:iSub||'', contractor:iContr,
+        revision:Number(iRev), baseSubmittalId:iBase||null,
+        dateReceived:new Date().toISOString(), slaDays:sla,
+        dueDate:new Date(Date.now()+sla*86400000).toISOString(),
+        assignedTo:rawA||'Unassigned', ballInCourt:rawB,
+        internalStatus:(!rawA||rawA==='Unassigned')?'Unassigned':'Assigned',
+        externalStatus:'Pending', incomingPdfRef:fileUrl, incomingFileName:iFile?iFile.name:null,
+        outgoingFiles:[], relatedDocs:iDocs.trim(), comments:[], tags,
+        loggedBy:activeUser.name, loggedById:activeUser.id, qcReviewer:'',
+        history:[{timestamp:new Date().toISOString(),action:`Ingested ${activeModule.slice(0,-1)}${iFile?' with attachment':''}`,user:activeUser.name}]
+      });
       showToast(`${termMod} logged.`); setCurrentView('dashboard');
-    } catch(err){console.error(err);showToast('Error saving.','error');}
-    finally{setUploading(false);setProgress(0);}
+    } catch(err) { console.error(err); showToast('Error saving.','error'); }
+    finally { setUploading(false); setProgress(0); }
   };
 
+  // ── Outgoing file upload ──────────────────────────────────────────────────────
   const doOutgoing = async () => {
-    if(!outFile||!activeRec||!user)return; setUploading(true); setProgress(0);
+    if (!outFile||!activeRec||!user) return; setUploading(true); setProgress(0);
     try {
-      const ext=outFile.name.split('.').pop(); const ts=Date.now();
-      const url=await uploadFile(outFile,`projects/${activeRec.projectId}/${activeModule}/${activeRec.id}/Markups_${ts}.${ext}`);
-      const entry={url,name:outFile.name,uploadedAt:new Date().toISOString(),uploadedBy:activeUser.name};
+      const ext = outFile.name.split('.').pop();
+      const url = await uploadFile(outFile,`projects/${activeRec.projectId}/${activeModule}/${activeRec.id}/Markups_${Date.now()}.${ext}`);
+      const entry = {url,name:outFile.name,uploadedAt:new Date().toISOString(),uploadedBy:activeUser.name};
       await db.collection(activeModule).doc(activeRec.id).update({outgoingFiles:AU(entry),history:AU({timestamp:new Date().toISOString(),action:`Uploaded Redline: ${outFile.name}`,user:activeUser.name})});
       showToast('Markups uploaded.'); setOutFile(null);
-    } catch{showToast('Upload failed.','error');}
-    finally{setUploading(false);setProgress(0);}
+    } catch { showToast('Upload failed.','error'); }
+    finally { setUploading(false); setProgress(0); }
   };
 
-  const updateStatus = async (id,data) => { try{await db.collection(activeModule).doc(id).update({...data,history:AU({timestamp:new Date().toISOString(),action:`Updated: ${Object.keys(data).join(', ')}`,user:activeUser.name})});showToast('Saved.');}catch{showToast('Error.','error');} };
-  const deleteRecord = async id => { if(!window.confirm(`Permanently delete this ${termMod}?`))return; try{await db.collection(activeModule).doc(id).delete();showToast('Deleted.');setActiveRec(null);setCurrentView('dashboard');}catch{showToast('Error.','error');} };
-  const doEditSubmit = async e => { e.preventDefault(); try{const sd=Number(editForm.slaDays)||14;const dd=new Date(new Date(activeRec.dateReceived).getTime()+sd*86400000).toISOString();await db.collection(activeModule).doc(activeRec.id).update({title:editForm.title,subtitle:editForm.subtitle,contractor:editForm.contractor,revision:Number(editForm.revision),slaDays:sd,dueDate:dd,relatedDocs:editForm.relatedDocs,history:AU({timestamp:new Date().toISOString(),action:'Edited Metadata',user:activeUser.name})});setIsEditing(false);showToast('Updated.');}catch{showToast('Error.','error');} };
-  const addComment = async e => { e.preventDefault();if(!newComment.trim())return;const c={id:Date.now().toString(),text:newComment.trim(),user:activeUser.name,timestamp:new Date().toISOString()};try{await db.collection(activeModule).doc(activeRec.id).update({comments:AU(c)});setNewComment('');}catch{showToast('Error.','error');} };
-  const addQuickComment = async e => { e.preventDefault();if(!quickText.trim()||!quickModal)return;const c={id:Date.now().toString(),text:quickText.trim(),user:activeUser.name,timestamp:new Date().toISOString()};try{await db.collection(activeModule).doc(quickModal.id).update({comments:AU(c)});showToast('Comment added.');setQuickModal(null);setQuickText('');}catch{showToast('Error.','error');} };
-  const handleSort = f => { if(sortField===f)setSortDir(d=>d==='asc'?'desc':'asc');else{setSortField(f);setSortDir('desc');} };
+  // ── Status / edit / delete ────────────────────────────────────────────────────
+  const updateStatus = async (id,data) => {
+    try { await db.collection(activeModule).doc(id).update({...data,history:AU({timestamp:new Date().toISOString(),action:`Updated: ${Object.keys(data).join(', ')}`,user:activeUser.name})}); showToast('Saved.'); }
+    catch { showToast('Error.','error'); }
+  };
+  const deleteRecord = async id => {
+    if (!window.confirm(`Permanently delete this ${termMod}?`)) return;
+    try { await db.collection(activeModule).doc(id).delete(); showToast('Deleted.'); setActiveRec(null); setCurrentView('dashboard'); }
+    catch { showToast('Error.','error'); }
+  };
+  const doEditSubmit = async e => {
+    e.preventDefault();
+    try {
+      const sd = Number(editForm.slaDays)||14;
+      const dd = new Date(new Date(activeRec.dateReceived).getTime()+sd*86400000).toISOString();
+      await db.collection(activeModule).doc(activeRec.id).update({title:editForm.title,subtitle:editForm.subtitle,contractor:editForm.contractor,revision:Number(editForm.revision),slaDays:sd,dueDate:dd,relatedDocs:editForm.relatedDocs,history:AU({timestamp:new Date().toISOString(),action:'Edited Metadata',user:activeUser.name})});
+      setIsEditing(false); showToast('Updated.');
+    } catch { showToast('Error.','error'); }
+  };
 
-  const isRfi   = activeModule==='rfis';
-  const termMod = isRfi?'RFI':'Submittal';
-  const termRev = isRfi?'RFI No.':'Revision';
-  const termSub = isRfi?'Proposed Solution / Reason':'Description / Spec Reference';
+  // ── Comments ──────────────────────────────────────────────────────────────────
+  const addComment = async e => {
+    e.preventDefault(); if (!newComment.trim()) return;
+    const c = {id:Date.now().toString(),text:newComment.trim(),user:activeUser.name,timestamp:new Date().toISOString()};
+    try { await db.collection(activeModule).doc(activeRec.id).update({comments:AU(c)}); setNewComment(''); }
+    catch { showToast('Error.','error'); }
+  };
+  const addQuickComment = async e => {
+    e.preventDefault(); if (!quickText.trim()||!quickModal) return;
+    const c = {id:Date.now().toString(),text:quickText.trim(),user:activeUser.name,timestamp:new Date().toISOString()};
+    try { await db.collection(activeModule).doc(quickModal.id).update({comments:AU(c)}); showToast('Comment added.'); setQuickModal(null); setQuickText(''); }
+    catch { showToast('Error.','error'); }
+  };
+
+  // ── Sort ──────────────────────────────────────────────────────────────────────
+  const handleSort = f => { if(sortField===f) setSortDir(d=>d==='asc'?'desc':'asc'); else { setSortField(f); setSortDir('desc'); } };
+
+  // ── Derived values ────────────────────────────────────────────────────────────
+  const isRfi   = activeModule === 'rfis';
+  const termMod = isRfi ? 'RFI' : 'Submittal';
+  const termRev = isRfi ? 'RFI No.' : 'Revision';
+  const termSub = isRfi ? 'Proposed Solution / Reason' : 'Description / Spec Reference';
   const activeFC = [fIntSt,fExtSt,fAssignee,fSla].filter(Boolean).length;
 
-  // Base project filter applied globally
-  const projectFiltered = useMemo(() => records.filter(s => !activeProjectId || s.projectId === activeProjectId), [records, activeProjectId]);
+  const projectFiltered = useMemo(() =>
+    records.filter(s => !activeProjectId || s.projectId === activeProjectId),
+  [records, activeProjectId]);
 
   const filteredRecs = useMemo(() => projectFiltered.filter(s => {
-    const ms = !searchQ || s.title.toLowerCase().includes(searchQ.toLowerCase()) || s.projectName.toLowerCase().includes(searchQ.toLowerCase());
-    const mi = !fIntSt || s.internalStatus===fIntSt;
-    const me = !fExtSt || s.externalStatus===fExtSt;
-    const ma = !fAssignee || s.assignedTo===fAssignee;
+    const ms  = !searchQ || s.title.toLowerCase().includes(searchQ.toLowerCase()) || s.projectName.toLowerCase().includes(searchQ.toLowerCase());
+    const mi  = !fIntSt    || s.internalStatus === fIntSt;
+    const me  = !fExtSt    || s.externalStatus === fExtSt;
+    const ma  = !fAssignee || s.assignedTo === fAssignee;
     const {dr} = getSla(s);
-    const msl = !fSla||(fSla==='overdue'&&dr<0)||(fSla==='at-risk'&&dr>=0&&dr<=3)||(fSla==='on-track'&&dr>3);
+    const msl = !fSla || (fSla==='overdue'&&dr<0) || (fSla==='at-risk'&&dr>=0&&dr<=3) || (fSla==='on-track'&&dr>3);
     const base = ms&&mi&&me&&ma&&msl;
     if (tab==='my-queue') return base && s.assignedTo===activeUser.name && s.internalStatus!=='Sent Out';
     return base;
   }), [projectFiltered, searchQ, fIntSt, fExtSt, fAssignee, fSla, tab, activeUser.name]);
 
   const slaCounts = useMemo(() => {
-    const items = projectFiltered.filter(s => s.internalStatus!=='Sent Out');
-    return items.reduce((a,s)=>{const{dr}=getSla(s);if(dr<0)a.overdue++;else if(dr<=3)a.atRisk++;else a.onTrack++;return a;},{onTrack:0,atRisk:0,overdue:0});
+    const items = projectFiltered.filter(s => s.internalStatus !== 'Sent Out');
+    return items.reduce((a,s) => { const{dr}=getSla(s); if(dr<0)a.overdue++;else if(dr<=3)a.atRisk++;else a.onTrack++; return a; }, {onTrack:0,atRisk:0,overdue:0});
   }, [projectFiltered]);
 
   const myQCount = projectFiltered.filter(s => s.assignedTo===activeUser.name && s.internalStatus!=='Sent Out').length;
 
   const treeRecs = useMemo(() => {
-    const map={}; filteredRecs.forEach(s=>{map[s.id]={...s,children:[]};});
-    const roots=[]; filteredRecs.forEach(s=>{if(s.baseSubmittalId&&map[s.baseSubmittalId])map[s.baseSubmittalId].children.push(map[s.id]);else roots.push(map[s.id]);});
-    const gmx=n=>{let m=new Date(n.dateReceived).getTime();n.children.forEach(c=>{const cm=gmx(c);if(cm>m)m=cm;});return m;};
-    const gmd=n=>{let m=new Date(n.dueDate).getTime();n.children.forEach(c=>{const cm=new Date(c.dueDate).getTime();if(cm<m)m=cm;});return m;};
-    if(sortField==='title')roots.sort((a,b)=>sortDir==='asc'?a.title.localeCompare(b.title):b.title.localeCompare(a.title));
-    else if(sortField==='dueDate')roots.sort((a,b)=>sortDir==='asc'?gmd(a)-gmd(b):gmd(b)-gmd(a));
+    const map = {}; filteredRecs.forEach(s => { map[s.id]={...s,children:[]}; });
+    const roots = []; filteredRecs.forEach(s => { if(s.baseSubmittalId&&map[s.baseSubmittalId]) map[s.baseSubmittalId].children.push(map[s.id]); else roots.push(map[s.id]); });
+    const gmx = n => { let m=new Date(n.dateReceived).getTime(); n.children.forEach(c=>{const cm=gmx(c);if(cm>m)m=cm;}); return m; };
+    const gmd = n => { let m=new Date(n.dueDate).getTime(); n.children.forEach(c=>{const cm=new Date(c.dueDate).getTime();if(cm<m)m=cm;}); return m; };
+    if (sortField==='title') roots.sort((a,b)=>sortDir==='asc'?a.title.localeCompare(b.title):b.title.localeCompare(a.title));
+    else if (sortField==='dueDate') roots.sort((a,b)=>sortDir==='asc'?gmd(a)-gmd(b):gmd(b)-gmd(a));
     else roots.sort((a,b)=>sortDir==='asc'?gmx(a)-gmx(b):gmx(b)-gmx(a));
-    const flat=[];
-    roots.forEach(r=>{const all=[r,...r.children].sort((a,b)=>a.revision-b.revision);flat.push({isVirtual:true,id:`G-${r.id}`,title:r.title,projectName:r.projectName,contractor:r.contractor,cnt:all.length});all.forEach(x=>{x.indentLevel=1;flat.push(x);});});
+    const flat = [];
+    roots.forEach(r => {
+      const all = [r,...r.children].sort((a,b)=>a.revision-b.revision);
+      flat.push({isVirtual:true,id:`G-${r.id}`,title:r.title,projectName:r.projectName,contractor:r.contractor,cnt:all.length});
+      all.forEach(x => { x.indentLevel=1; flat.push(x); });
+    });
     return flat;
   }, [filteredRecs, sortField, sortDir]);
 
   const exportCSV = () => {
-    const lbl=isRfi?'RFI':'Submittal';
-    const h=[`${lbl} ID`,termRev,'Title',termSub,'Project','Contractor','Ball in Court','Logged By','Internal Status','External Status','Assigned To','QC Reviewer','Date Received','Review Period (Days)','Due Date','Components','Disciplines','Related Docs'];
-    const q=s=>`"${(s||'').replace(/"/g,'""')}"`;
-    const rows=treeRecs.filter(r=>!r.isVirtual).map(s=>[s.id,s.revision,q(s.title),q(s.subtitle),q(s.projectName),q(s.contractor),s.ballInCourt||'—',q(s.loggedBy),s.internalStatus,s.externalStatus,q(s.assignedTo||'Unassigned'),q(s.qcReviewer),new Date(s.dateReceived).toLocaleDateString(),s.slaDays,new Date(s.dueDate).toLocaleDateString(),q((s.tags?.components||[]).join(', ')),q((s.tags?.disciplines||[]).join(', ')),q(s.relatedDocs)]);
-    const csv='data:text/csv;charset=utf-8,'+[h.join(','),...rows.map(r=>r.join(','))].join('\n');
-    const a=document.createElement('a');a.href=encodeURI(csv);a.download=`${lbl}_Log_${new Date().toISOString().split('T')[0]}.csv`;document.body.appendChild(a);a.click();document.body.removeChild(a);
-    showToast('Export complete.');
+    const lbl = isRfi?'RFI':'Submittal';
+    const h = [`${lbl} ID`,termRev,'Title',termSub,'Project','Contractor','Ball in Court','Logged By','Internal Status','External Status','Assigned To','QC Reviewer','Date Received','Review Period (Days)','Due Date','Components','Disciplines','Related Docs'];
+    const q = s => `"${(s||'').replace(/"/g,'""')}"`;
+    const rows = treeRecs.filter(r=>!r.isVirtual).map(s=>[s.id,s.revision,q(s.title),q(s.subtitle),q(s.projectName),q(s.contractor),s.ballInCourt||'—',q(s.loggedBy),s.internalStatus,s.externalStatus,q(s.assignedTo||'Unassigned'),q(s.qcReviewer),new Date(s.dateReceived).toLocaleDateString(),s.slaDays,new Date(s.dueDate).toLocaleDateString(),q((s.tags?.components||[]).join(', ')),q((s.tags?.disciplines||[]).join(', ')),q(s.relatedDocs)]);
+    const csv = 'data:text/csv;charset=utf-8,'+[h.join(','),...rows.map(r=>r.join(','))].join('\n');
+    const a = document.createElement('a'); a.href=encodeURI(csv); a.download=`${lbl}_Log_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast('Export complete.');
   };
 
-  // ── Auth screens ────────────────────────────────────────────────────────────
+  // ── Auth screens ──────────────────────────────────────────────────────────────
   if (authLoading) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}><p style={{color:'#64748b',fontSize:14}}>Initializing…</p></div>;
 
   if (!user) return (
@@ -484,27 +586,25 @@ function App() {
     </div>
   );
 
-  const SortTh = ({ label, field, style: s={} }) => (
+  const SortTh = ({label,field,style:s={}}) => (
     <th className="th" style={{cursor:'pointer',userSelect:'none',...s}} onClick={()=>handleSort(field)}>
       <span style={{display:'inline-flex',alignItems:'center',gap:4}}>
-        {label}
-        {sortField===field?(sortDir==='asc'?<IArrUp size={10}/>:<IArrDn size={10}/>):<span style={{color:'#cbd5e1',fontSize:10}}>↕</span>}
+        {label}{sortField===field?(sortDir==='asc'?<IArrUp size={10}/>:<IArrDn size={10}/>):<span style={{color:'#cbd5e1',fontSize:10}}>↕</span>}
       </span>
     </th>
   );
 
-  const activeProjectName = projects.find(p => p.id === activeProjectId)?.name || '';
+  const activeProjectName = projects.find(p=>p.id===activeProjectId)?.name||'';
+
+  // ── Intake helpers ────────────────────────────────────────────────────────────
+  const clearTemplate = () => { setITemplate(''); setITitle(''); setISub(''); setIContr(''); setISla(14); setIComp(''); setIDisc(''); setIDocs(''); };
+  const clearForm     = () => { setIBase(''); setITitle(''); setIContr(''); setIRev(0); };
 
   return (
     <div style={{display:'flex',minHeight:'100vh'}}>
-      <Sidebar
-        activeModule={activeModule} setActiveModule={setActiveModule}
-        currentView={currentView} setCurrentView={setCurrentView}
-        isRfi={isRfi} user={user} activeUser={activeUser}
-        doLogout={async()=>{await auth.signOut();showToast('Signed out.');}}
-        activeRecords={records} projects={projects}
-        activeProjectId={activeProjectId} setActiveProjectId={setActiveProjectId}
-      />
+      <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} currentView={currentView} setCurrentView={setCurrentView}
+        isRfi={isRfi} user={user} activeUser={activeUser} doLogout={async()=>{await auth.signOut();showToast('Signed out.');}}
+        activeRecords={records} projects={projects} activeProjectId={activeProjectId} setActiveProjectId={setActiveProjectId}/>
 
       <div style={{flex:1,minWidth:0,display:'flex',flexDirection:'column'}}>
         {/* Topbar */}
@@ -530,8 +630,8 @@ function App() {
               <button className="btn-s" style={{fontSize:12,padding:'5px 10px'}} onClick={exportCSV}><IDl size={13}/> Export</button>
               <button className="btn-p" style={{fontSize:12,padding:'5px 12px'}} onClick={()=>setCurrentView('intake')}><IPlus size={13}/> Log {termMod}</button>
             </>}
-            {currentView==='intake'&&<button className="btn-s" style={{fontSize:12}} disabled={uploading} onClick={()=>setCurrentView('dashboard')}><IArrow size={13}/> Back</button>}
-            {currentView==='detail'&&(
+            {currentView==='intake' && <button className="btn-s" style={{fontSize:12}} disabled={uploading} onClick={()=>setCurrentView('dashboard')}><IArrow size={13}/> Back</button>}
+            {currentView==='detail' && (
               <div style={{display:'flex',gap:8}}>
                 <button className="btn-s" style={{fontSize:12}} onClick={()=>{setActiveRec(null);setCurrentView('dashboard');}}><IArrow size={13}/> Back</button>
                 <button onClick={()=>deleteRecord(activeRec.id)} style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 12px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:5,fontSize:12,fontWeight:500,cursor:'pointer'}}><ITrash size={13}/> Delete</button>
@@ -540,11 +640,10 @@ function App() {
           </div>
         </div>
 
-        {/* Page content */}
         <div style={{flex:1,padding:20,overflowY:'auto'}}>
 
-          {/* ── PROJECTS ──────────────────────────────────────────────────── */}
-          {currentView==='projects'&&(
+          {/* ── PROJECTS ────────────────────────────────────────────────────── */}
+          {currentView==='projects' && (
             <div style={{display:'grid',gridTemplateColumns:'280px 1fr',gap:18,maxWidth:880}}>
               <div className="card" style={{padding:18,alignSelf:'start'}}>
                 <div style={{fontWeight:600,fontSize:13,color:'#0f172a',marginBottom:14,paddingBottom:10,borderBottom:'1px solid #f1f5f9'}}>{editingProj?'Edit Project':'New Project'}</div>
@@ -552,7 +651,7 @@ function App() {
                   <div><FL>Contract / Project Name</FL><input className="inp" required placeholder="e.g. I-95 Viaduct Replacement" value={projForm.name} onChange={e=>setProjForm({...projForm,name:e.target.value})}/></div>
                   <div><FL>Client / Owner</FL><input className="inp" required placeholder="e.g. State DOT" value={projForm.client} onChange={e=>setProjForm({...projForm,client:e.target.value})}/></div>
                   <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:4}}>
-                    {editingProj&&<button type="button" className="btn-s" style={{fontSize:12}} onClick={()=>{setEditingProj(false);setProjForm({id:'',name:'',client:''});}}>Cancel</button>}
+                    {editingProj && <button type="button" className="btn-s" style={{fontSize:12}} onClick={()=>{setEditingProj(false);setProjForm({id:'',name:'',client:''});}}>Cancel</button>}
                     <button type="submit" className="btn-p" style={{fontSize:12}}>{editingProj?'Update':'Create'}</button>
                   </div>
                 </form>
@@ -561,13 +660,10 @@ function App() {
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr><th className="th">Project</th><th className="th">Client</th><th className="th" style={{width:72,textAlign:'right'}}>Actions</th></tr></thead>
                   <tbody>
-                    {projects.length===0?<tr><td className="td" colSpan="3" style={{textAlign:'center',color:'#94a3b8',fontStyle:'italic'}}>No projects configured.</td></tr>:
-                      projects.map(p=>(
+                    {projects.length===0 ? <tr><td className="td" colSpan="3" style={{textAlign:'center',color:'#94a3b8',fontStyle:'italic'}}>No projects configured.</td></tr> :
+                      projects.map(p => (
                         <tr key={p.id} className="tr-data">
-                          <td className="td">
-                            <div style={{fontWeight:600,color:'#0f172a'}}>{p.name}</div>
-                            <div style={{fontSize:11,color:'#94a3b8',fontFamily:'monospace',marginTop:2}}>{p.id}</div>
-                          </td>
+                          <td className="td"><div style={{fontWeight:600,color:'#0f172a'}}>{p.name}</div><div style={{fontSize:11,color:'#94a3b8',fontFamily:'monospace',marginTop:2}}>{p.id}</div></td>
                           <td className="td" style={{fontSize:12}}>{p.client}</td>
                           <td className="td" style={{textAlign:'right'}}>
                             <div style={{display:'flex',justifyContent:'flex-end',gap:4}}>
@@ -584,18 +680,18 @@ function App() {
             </div>
           )}
 
-          {/* ── TEAM ──────────────────────────────────────────────────────── */}
-          {currentView==='team'&&(
+          {/* ── TEAM ────────────────────────────────────────────────────────── */}
+          {currentView==='team' && (
             <div style={{display:'grid',gridTemplateColumns:'280px 1fr',gap:18,maxWidth:880}}>
               <div className="card" style={{padding:18,alignSelf:'start'}}>
                 <div style={{fontWeight:600,fontSize:13,color:'#0f172a',marginBottom:6,paddingBottom:10,borderBottom:'1px solid #f1f5f9'}}>{editingTeam?'Edit Member':'Add Team Member'}</div>
-                <p style={{fontSize:11,color:'#64748b',marginBottom:12,marginTop:8}}>Email must match the login email for name resolution to work.</p>
+                <p style={{fontSize:11,color:'#64748b',marginBottom:12,marginTop:8}}>Email must match login email for name resolution.</p>
                 <form onSubmit={saveTeam} style={{display:'flex',flexDirection:'column',gap:12}}>
                   <div><FL>Full Name</FL><input className="inp" required placeholder="e.g. Sarah Jenkins" value={teamForm.name} onChange={e=>setTeamForm({...teamForm,name:e.target.value})}/></div>
                   <div><FL>Login Email</FL><input className="inp" type="email" required placeholder="e.g. sjenkins@firm.com" value={teamForm.email} onChange={e=>setTeamForm({...teamForm,email:e.target.value})}/></div>
                   <div><FL>Role / Title</FL><input className="inp" placeholder="e.g. Structural Engineer" value={teamForm.role} onChange={e=>setTeamForm({...teamForm,role:e.target.value})}/></div>
                   <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:4}}>
-                    {editingTeam&&<button type="button" className="btn-s" style={{fontSize:12}} onClick={()=>{setEditingTeam(false);setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'});}}>Cancel</button>}
+                    {editingTeam && <button type="button" className="btn-s" style={{fontSize:12}} onClick={()=>{setEditingTeam(false);setTeamForm({id:'',name:'',email:'',role:'Structural Engineer'});}}>Cancel</button>}
                     <button type="submit" className="btn-p" style={{fontSize:12}}><IUPlus size={13}/>{editingTeam?'Update':'Add Member'}</button>
                   </div>
                 </form>
@@ -604,8 +700,8 @@ function App() {
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr><th className="th">Name / Role</th><th className="th">Email</th><th className="th" style={{width:72,textAlign:'right'}}>Actions</th></tr></thead>
                   <tbody>
-                    {team.length===0?<tr><td className="td" colSpan="3" style={{textAlign:'center',color:'#94a3b8',fontStyle:'italic'}}>No team members configured.</td></tr>:
-                      team.map(m=>(
+                    {team.length===0 ? <tr><td className="td" colSpan="3" style={{textAlign:'center',color:'#94a3b8',fontStyle:'italic'}}>No team members configured.</td></tr> :
+                      team.map(m => (
                         <tr key={m.id} className="tr-data">
                           <td className="td"><div style={{fontWeight:600,color:'#0f172a'}}>{m.name}</div><div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{m.role}</div></td>
                           <td className="td" style={{fontSize:12,color:'#475569'}}>{m.email}</td>
@@ -624,10 +720,9 @@ function App() {
             </div>
           )}
 
-          {/* ── DASHBOARD ─────────────────────────────────────────────────── */}
-          {currentView==='dashboard'&&(
+          {/* ── DASHBOARD ───────────────────────────────────────────────────── */}
+          {currentView==='dashboard' && (
             <div style={{display:'flex',flexDirection:'column',gap:14}}>
-
               {/* SLA strip */}
               <div className="card" style={{padding:'10px 16px',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:11,fontWeight:700,color:'#64748b',letterSpacing:'.06em',textTransform:'uppercase',marginRight:12,whiteSpace:'nowrap'}}>Review Period</span>
@@ -635,8 +730,9 @@ function App() {
                   {k:'on-track',label:'On Track', n:slaCounts.onTrack, dot:'#16a34a',bg:'#f0fdf4',border:'#bbf7d0'},
                   {k:'at-risk', label:'At Risk',  n:slaCounts.atRisk,  dot:'#d97706',bg:'#fffbeb',border:'#fde68a'},
                   {k:'overdue', label:'Overdue',  n:slaCounts.overdue, dot:'#dc2626',bg:'#fef2f2',border:'#fecaca'},
-                ].map(({k,label,n,dot,bg,border})=>(
-                  <button key={k} onClick={()=>setFSla(fSla===k?'':k)} style={{display:'flex',alignItems:'center',gap:7,padding:'5px 14px',borderRadius:4,border:`1px solid ${fSla===k?dot:border}`,background:fSla===k?bg:'transparent',cursor:'pointer',transition:'all .15s'}}>
+                ].map(({k,label,n,dot,bg,border}) => (
+                  <button key={k} onClick={()=>setFSla(fSla===k?'':k)}
+                    style={{display:'flex',alignItems:'center',gap:7,padding:'5px 14px',borderRadius:4,border:`1px solid ${fSla===k?dot:border}`,background:fSla===k?bg:'transparent',cursor:'pointer',transition:'all .15s'}}>
                     <span style={{width:8,height:8,borderRadius:'50%',background:dot,display:'block',flexShrink:0}}></span>
                     <span style={{fontSize:14,fontWeight:800,color:dot,lineHeight:1}}>{n}</span>
                     <span style={{fontSize:12,color:'#475569',fontWeight:500}}>{label}</span>
@@ -649,7 +745,7 @@ function App() {
               </div>
 
               {/* Filter panel */}
-              {showFilters&&(
+              {showFilters && (
                 <div className="card" style={{padding:'12px 16px'}}>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr) auto',gap:10,alignItems:'end'}}>
                     <div><FL>Internal Status</FL><select className="sel" style={{fontSize:12}} value={fIntSt} onChange={e=>setFIntSt(e.target.value)}><option value="">All</option>{INT_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
@@ -657,7 +753,7 @@ function App() {
                     <div><FL>Assignee</FL><select className="sel" style={{fontSize:12}} value={fAssignee} onChange={e=>setFAssignee(e.target.value)}><option value="">All</option>{userOptions.map(n=><option key={n} value={n}>{n}</option>)}</select></div>
                     <div><FL>Review Period</FL><select className="sel" style={{fontSize:12}} value={fSla} onChange={e=>setFSla(e.target.value)}><option value="">All</option><option value="on-track">On Track</option><option value="at-risk">At Risk</option><option value="overdue">Overdue</option></select></div>
                     <div style={{display:'flex',alignItems:'flex-end'}}>
-                      {activeFC>0&&<button onClick={()=>{setFIntSt('');setFExtSt('');setFAssignee('');setFSla('');}} style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:12,fontWeight:500,display:'flex',alignItems:'center',gap:4,padding:'7px 0',whiteSpace:'nowrap'}}><IX size={13}/>Clear all</button>}
+                      {activeFC>0 && <button onClick={()=>{setFIntSt('');setFExtSt('');setFAssignee('');setFSla('');}} style={{background:'none',border:'none',cursor:'pointer',color:'#ef4444',fontSize:12,fontWeight:500,display:'flex',alignItems:'center',gap:4,padding:'7px 0',whiteSpace:'nowrap'}}><IX size={13}/>Clear all</button>}
                     </div>
                   </div>
                 </div>
@@ -665,10 +761,7 @@ function App() {
 
               {/* Tabs */}
               <div style={{display:'flex',borderBottom:'1px solid #e2e8f0'}}>
-                {[
-                  {k:'all',     label:`All Active ${isRfi?'RFIs':'Submittals'}`},
-                  {k:'my-queue',label:`My Queue (${myQCount})`},
-                ].map(({k,label})=>(
+                {[{k:'all',label:`All Active ${isRfi?'RFIs':'Submittals'}`},{k:'my-queue',label:`My Queue (${myQCount})`}].map(({k,label}) => (
                   <button key={k} onClick={()=>setTab(k)} style={{padding:'8px 16px',fontSize:13,fontWeight:600,color:tab===k?'#2563eb':'#64748b',border:'none',background:'none',borderBottom:`2px solid ${tab===k?'#2563eb':'transparent'}`,cursor:'pointer',marginBottom:-1}}>
                     {label}
                   </button>
@@ -677,57 +770,59 @@ function App() {
 
               {/* Table */}
               <div className="card" style={{overflow:'hidden'}}>
-                {loading?(
+                {loading ? (
                   <div style={{padding:40,textAlign:'center',color:'#94a3b8',fontSize:13}}>Loading {activeModule}…</div>
-                ):filteredRecs.length===0?(
+                ) : filteredRecs.length===0 ? (
                   <div style={{padding:48,textAlign:'center'}}>
                     <ICheck size={28} style={{color:'#cbd5e1',margin:'0 auto 10px',display:'block'}}/>
                     <div style={{fontSize:14,fontWeight:600,color:'#334155'}}>No items match the current filters</div>
                     <div style={{fontSize:12,color:'#94a3b8',marginTop:4}}>Try adjusting your search or filter criteria</div>
                   </div>
-                ):(
+                ) : (
                   <div style={{overflowX:'auto'}}>
-                    <table style={{width:'100%',borderCollapse:'collapse',minWidth:860}}>
+                    <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
                       <thead>
                         <tr>
-                          <SortTh label={termMod} field="title" style={{minWidth:260}}/>
-                          {!activeProjectId && <th className="th" style={{minWidth:120}}>Project</th>}
-                          <SortTh label="Timeline" field="dueDate" style={{minWidth:140}}/>
-                          <th className="th" style={{minWidth:150}}>Routing / BIC</th>
-                          <SortTh label="Aging" field="dateReceived" style={{minWidth:90}}/>
-                          <th className="th" style={{minWidth:200}}>Comments</th>
-                          <th className="th" style={{width:60}}></th>
+                          <SortTh label={termMod} field="title" style={{minWidth:240}}/>
+                          {!activeProjectId && <th className="th" style={{minWidth:110}}>Project</th>}
+                          <SortTh label="Timeline" field="dueDate" style={{minWidth:130}}/>
+                          <th className="th" style={{minWidth:140}}>Routing / BIC</th>
+                          <SortTh label="Aging" field="dateReceived" style={{minWidth:85}}/>
+                          <th className="th" style={{minWidth:190}}>Comments</th>
+                          <th className="th" style={{width:55}}></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {treeRecs.map(sub=>{
-                          if(sub.isVirtual) return(
+                        {treeRecs.map(sub => {
+                          if (sub.isVirtual) return (
                             <tr key={sub.id} style={{background:'#f8fafc',borderTop:'2px solid #e2e8f0',borderBottom:'1px solid #e2e8f0'}}>
                               <td className="td" style={{paddingTop:8,paddingBottom:8}} colSpan={activeProjectId?1:2}>
                                 <div style={{fontWeight:700,color:'#0f172a',fontSize:13}}>{sub.title}</div>
                                 <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase',marginTop:2}}>
-                                  {termMod} Thread · {sub.cnt} record{sub.cnt>1?'s':''}{!activeProjectId&&` · ${sub.projectName}`}
+                                  {termMod} Thread · {sub.cnt} record{sub.cnt>1?'s':''}
+                                  {!activeProjectId && ` · ${sub.projectName}`}
                                 </div>
                               </td>
                               <td colSpan="5" className="td" style={{paddingTop:8,paddingBottom:8}}></td>
                             </tr>
                           );
-                          const{de,dr,isLate}=getSla(sub);
-                          const bic=sub.ballInCourt||'—';
-                          const intSt=sub.internalStatus||'Unassigned';
-                          return(
+                          const {de,dr,isLate} = getSla(sub);
+                          const bic   = sub.ballInCourt||'—';
+                          const intSt = sub.internalStatus||'Unassigned';
+                          const latestComment = sub.comments?.length ? [...sub.comments].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0] : null;
+                          return (
                             <tr key={sub.id} className="tr-data">
                               <td className="td">
                                 <div style={{display:'flex',alignItems:'flex-start',gap:6,paddingLeft:sub.indentLevel*16}}>
-                                  {sub.indentLevel>0&&<ICR size={13} style={{color:'#cbd5e1',marginTop:3,flexShrink:0}}/>}
+                                  {sub.indentLevel>0 && <ICR size={13} style={{color:'#cbd5e1',marginTop:3,flexShrink:0}}/>}
                                   <div>
                                     <div style={{fontWeight:600,color:'#0f172a',fontSize:13,lineHeight:1.35}}>{sub.title}</div>
-                                    {sub.subtitle&&<div style={{fontSize:11,color:'#64748b',marginTop:1}}>{sub.subtitle}</div>}
+                                    {sub.subtitle && <div style={{fontSize:11,color:'#64748b',marginTop:1}}>{sub.subtitle}</div>}
                                     <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
                                       <span style={{fontSize:10,color:'#94a3b8',fontFamily:'monospace'}}>{sub.id} · {termRev} {sub.revision}</span>
-                                      {sub.relatedDocs&&<span style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,color:'#3b82f6',background:'#eff6ff',padding:'1px 6px',borderRadius:3,border:'1px solid #bfdbfe'}}><ILink size={9}/>{sub.relatedDocs}</span>}
+                                      {sub.relatedDocs && <span style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,color:'#3b82f6',background:'#eff6ff',padding:'1px 6px',borderRadius:3,border:'1px solid #bfdbfe'}}><ILink size={9}/>{sub.relatedDocs}</span>}
                                     </div>
-                                    {(sub.tags?.components?.length>0||sub.tags?.disciplines?.length>0)&&(
+                                    {(sub.tags?.components?.length>0||sub.tags?.disciplines?.length>0) && (
                                       <div style={{display:'flex',flexWrap:'wrap',gap:3,marginTop:5}}>
                                         {sub.tags.components?.map((t,i)=><span key={i} style={{fontSize:10,fontWeight:600,padding:'1px 6px',borderRadius:3,background:'#eef2ff',color:'#4338ca',border:'1px solid #e0e7ff',display:'inline-flex',alignItems:'center',gap:3}}><ITag size={9}/>{t}</span>)}
                                         {sub.tags.disciplines?.map((t,i)=><span key={i} style={{fontSize:10,fontWeight:600,padding:'1px 6px',borderRadius:3,background:'#fffbeb',color:'#92400e',border:'1px solid #fde68a'}}>{t}</span>)}
@@ -737,7 +832,7 @@ function App() {
                                   </div>
                                 </div>
                               </td>
-                              {!activeProjectId&&(
+                              {!activeProjectId && (
                                 <td className="td">
                                   <div style={{fontSize:12,fontWeight:500,color:'#1e293b'}}>{sub.projectName}</div>
                                   <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>{sub.contractor}</div>
@@ -761,7 +856,7 @@ function App() {
                                 </div>
                               </td>
                               <td className="td">
-                                {sub.internalStatus === 'Sent Out' ? (
+                                {sub.internalStatus==='Sent Out' ? (
                                   <div>
                                     <div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,fontWeight:600,color:'#16a34a'}}><ICheck size={13}/>Sent Out</div>
                                     <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{de}d elapsed</div>
@@ -773,30 +868,24 @@ function App() {
                                   </div>
                                 )}
                               </td>
+                              {/* Comments cell — click to open scrollable discussion */}
                               <td className="td" style={{cursor:'pointer'}} onClick={()=>setQuickModal(sub)}>
-                                {(!sub.comments||sub.comments.length===0) ? (
+                                {!latestComment ? (
                                   <span style={{fontSize:11,color:'#cbd5e1',fontStyle:'italic'}}>No comments</span>
-                                ) : (() => {
-                                  const latest = [...sub.comments].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0];
-                                  return (
-                                    <div>
-                                      <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                                        <span style={{fontSize:10,fontWeight:700,background:'#dbeafe',color:'#1d4ed8',padding:'1px 7px',borderRadius:8,display:'inline-flex',alignItems:'center',gap:4}}><IMsg size={9}/>{sub.comments.length}</span>
-                                        <span style={{fontSize:10,color:'#94a3b8'}}>{fmtDate(latest.timestamp)}</span>
-                                      </div>
-                                      <div style={{fontSize:11,fontWeight:600,color:'#334155',marginBottom:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{latest.user}</div>
-                                      <div style={{fontSize:11,color:'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{latest.text}</div>
+                                ) : (
+                                  <div>
+                                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                                      <span style={{fontSize:10,fontWeight:700,background:'#dbeafe',color:'#1d4ed8',padding:'1px 7px',borderRadius:8,display:'inline-flex',alignItems:'center',gap:4}}><IMsg size={9}/>{sub.comments.length}</span>
+                                      <span style={{fontSize:10,color:'#94a3b8'}}>{fmtDate(latestComment.timestamp)}</span>
                                     </div>
-                                  );
-                                })()}
+                                    <div style={{fontSize:11,fontWeight:600,color:'#334155',marginBottom:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{latestComment.user}</div>
+                                    <div style={{fontSize:11,color:'#64748b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{latestComment.text}</div>
+                                  </div>
+                                )}
                               </td>
                               <td className="td" style={{textAlign:'right'}}>
-                                <div className="row-acts" style={{display:'flex',justifyContent:'flex-end',gap:4}}>
-                                  <button onClick={()=>setQuickModal(sub)} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',padding:4,borderRadius:4,display:'flex',alignItems:'center',gap:3}}>
-                                    <IMsg size={13}/>
-                                    {sub.comments?.length>0&&<span style={{fontSize:10,fontWeight:700,background:'#e2e8f0',color:'#475569',padding:'0 4px',borderRadius:8}}>{sub.comments.length}</span>}
-                                  </button>
-                                  <button onClick={()=>{setActiveRec(sub);setCurrentView('detail');}} style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:4,cursor:'pointer',color:'#1d4ed8',fontSize:12,fontWeight:600,padding:'3px 10px'}}>Open</button>
+                                <div className="row-acts" style={{display:'flex',justifyContent:'flex-end'}}>
+                                  <button onClick={()=>{setActiveRec(sub);setCurrentView('detail');}} style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:4,cursor:'pointer',color:'#1d4ed8',fontSize:12,fontWeight:600,padding:'3px 10px',whiteSpace:'nowrap'}}>Open</button>
                                 </div>
                               </td>
                             </tr>
@@ -810,50 +899,59 @@ function App() {
             </div>
           )}
 
-          {/* ── INTAKE ────────────────────────────────────────────────────── */}
-          {currentView==='intake'&&(
-            <div style={{maxWidth:620,margin:'0 auto'}}>
+          {/* ── INTAKE ──────────────────────────────────────────────────────── */}
+          {currentView==='intake' && (
+            <div style={{maxWidth:640,margin:'0 auto'}}>
               <div className="card" style={{overflow:'hidden'}}>
                 <div style={{padding:'14px 20px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',gap:10}}>
                   <div style={{background:'#eff6ff',borderRadius:6,padding:7,display:'flex'}}><IFPlus size={16} style={{color:'#2563eb'}}/></div>
                   <div><div style={{fontWeight:600,fontSize:14,color:'#0f172a'}}>Ingest {termMod}</div><div style={{fontSize:12,color:'#64748b'}}>Log an incoming package from a contractor.</div></div>
                 </div>
-                {projects.length===0?(
+                {projects.length===0 ? (
                   <div style={{padding:32,textAlign:'center',margin:20,border:'2px dashed #fde68a',borderRadius:8,background:'#fffbeb'}}>
                     <IAlert size={24} style={{color:'#d97706',margin:'0 auto 10px',display:'block'}}/>
                     <div style={{fontWeight:600,color:'#92400e',marginBottom:6}}>Configuration Required</div>
                     <div style={{fontSize:12,color:'#78350f',marginBottom:14}}>Create at least one project before logging records.</div>
                     <button className="btn-p" style={{fontSize:12}} onClick={()=>setCurrentView('projects')}>Go to Projects</button>
                   </div>
-                ):(
+                ) : (
                   <form onSubmit={doIntake} style={{padding:20,display:'flex',flexDirection:'column',gap:14}}>
+
+                    {/* Type toggle */}
                     <div style={{display:'flex',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:5,overflow:'hidden',width:'fit-content'}}>
-                      {['new','revision'].map(t=>(
-                        <button key={t} type="button" onClick={()=>{setIType(t);if(t==='new'){setIBase('');setITitle('');setIContr('');setIRev(0);}}}
-                          style={{padding:'6px 16px',fontSize:12,fontWeight:600,background:iType===t?'#fff':'transparent',color:iType===t?'#1d4ed8':'#64748b',border:'none',cursor:'pointer',borderRight:t==='new'?'1px solid #e2e8f0':'none',boxShadow:iType===t?'0 1px 3px rgba(0,0,0,.1)':'none',transition:'all .15s'}}>
-                          {t==='new'?`New ${termMod}`:'Revision to Existing'}
-                        </button>
-                      ))}
+                      <button type="button"
+                        title={`Log a brand new ${termMod} package received from a contractor for the first time.`}
+                        onClick={()=>{setIType('new');clearForm();setITemplate('');}}
+                        style={{padding:'6px 16px',fontSize:12,fontWeight:600,background:iType==='new'?'#fff':'transparent',color:iType==='new'?'#1d4ed8':'#64748b',border:'none',cursor:'pointer',borderRight:'1px solid #e2e8f0',boxShadow:iType==='new'?'0 1px 3px rgba(0,0,0,.1)':'none',transition:'all .15s'}}>
+                        New {termMod}
+                      </button>
+                      <button type="button"
+                        title={`Use when a contractor resubmits after a Revise & Resubmit decision. Creates a new revision linked to the original ${termMod} and groups them together as a thread in the register.`}
+                        onClick={()=>{setIType('revision');setITemplate('');}}
+                        style={{padding:'6px 16px',fontSize:12,fontWeight:600,background:iType==='revision'?'#fff':'transparent',color:iType==='revision'?'#1d4ed8':'#64748b',border:'none',cursor:'pointer',boxShadow:iType==='revision'?'0 1px 3px rgba(0,0,0,.1)':'none',transition:'all .15s'}}>
+                        Add Version to Existing
+                      </button>
                     </div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                      <div style={{paddingBottom:4}}>
+
+                    {/* Template selector (new submittals only) */}
+                    {iType==='new' && (
+                      <div>
                         <FL>Copy from Existing {termMod} <span style={{fontWeight:400,textTransform:'none',letterSpacing:0,color:'#94a3b8'}}>(optional template)</span></FL>
-                        <select className="sel" value={iTemplate}
-                          onChange={e => { setITemplate(e.target.value); if (!e.target.value) { setITitle(''); setISub(''); setIContr(''); setISla(14); setIComp(''); setIDisc(''); setIDocs(''); } }}>
+                        <select className="sel" value={iTemplate} onChange={e => { setITemplate(e.target.value); if (!e.target.value) clearTemplate(); }}>
                           <option value="">— Start from scratch —</option>
-                          {records.map(s => (
-                            <option key={s.id} value={s.id}>{s.projectName} · {s.id} – {s.title}</option>
-                          ))}
+                          {records.map(s => <option key={s.id} value={s.id}>{s.projectName} · {s.id} – {s.title}</option>)}
                         </select>
                         {iTemplate && (
                           <div style={{display:'flex',alignItems:'center',gap:6,marginTop:6,padding:'5px 10px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:5}}>
                             <ICheck size={12} style={{color:'#2563eb',flexShrink:0}}/>
                             <span style={{fontSize:11,color:'#1d4ed8'}}>Fields pre-filled from template — edit anything below before submitting.</span>
-                            <button type="button" onClick={()=>{ setITemplate(''); setITitle(''); setISub(''); setIContr(''); setISla(14); setIComp(''); setIDisc(''); setIDocs(''); }} style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:11,whiteSpace:'nowrap'}}>Clear</button>
+                            <button type="button" onClick={()=>{setITemplate('');clearTemplate();}} style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:11,whiteSpace:'nowrap'}}>Clear</button>
                           </div>
                         )}
                       </div>
                     )}
+
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                       <div style={{gridColumn:'1/-1'}}>
                         <FL>Project</FL>
                         <select className="sel" required value={iProj} onChange={e=>{setIProj(e.target.value);setIBase('');}}>
@@ -861,7 +959,18 @@ function App() {
                           {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
                       </div>
-                      {iType==='revision'&&<div style={{gridColumn:'1/-1'}}><FL>Base {termMod}</FL><select className="sel" required value={iBase} onChange={e=>setIBase(e.target.value)} disabled={!iProj}><option value="">{iProj?`Select a ${termMod}…`:'Select a project first…'}</option>{records.filter(s=>s.projectId===iProj).map(s=><option key={s.id} value={s.id}>{s.id} – {termRev} {s.revision}: {s.title}</option>)}</select></div>}
+
+                      {/* Base record selector for revisions */}
+                      {iType==='revision' && (
+                        <div style={{gridColumn:'1/-1'}}>
+                          <FL>Select Original {termMod} to Add a Version To</FL>
+                          <select className="sel" required value={iBase} onChange={e=>setIBase(e.target.value)} disabled={!iProj}>
+                            <option value="">{iProj?`Select a ${termMod}…`:'Select a project first…'}</option>
+                            {records.filter(s=>s.projectId===iProj).map(s=><option key={s.id} value={s.id}>{s.id} – {termRev} {s.revision}: {s.title}</option>)}
+                          </select>
+                        </div>
+                      )}
+
                       <div style={{gridColumn:'1/-1'}}><FL>{isRfi?'RFI Question / Title':'Submittal Title'}</FL><input className="inp" name="title" required placeholder={isRfi?'e.g. Discrepancy at Pier 2':'e.g. Abutment 1 Concrete Mix Design'} value={iTitle} onChange={e=>setITitle(e.target.value)}/></div>
                       <div style={{gridColumn:'1/-1'}}><FL>{termSub}</FL><input className="inp" name="subtitle" placeholder={isRfi?'e.g. Contractor proposes field welding.':'e.g. Spec Section 550'} value={iSub} onChange={e=>setISub(e.target.value)}/></div>
                       <div style={{gridColumn:'1/-1',paddingTop:4,borderTop:'1px solid #f1f5f9'}}>
@@ -870,29 +979,29 @@ function App() {
                       </div>
                       <div><FL>Contractor / Sub</FL><input className="inp" name="contractor" required placeholder="e.g. Apex Steel Corp" value={iContr} onChange={e=>setIContr(e.target.value)}/></div>
                       <div><FL>{termRev}</FL><input className="inp" type="number" name="revision" required min="0" value={iRev} onChange={e=>setIRev(Number(e.target.value))}/></div>
+
+                      {/* Review Period — synced days + date picker */}
                       <div style={{gridColumn:'1/-1'}}>
                         <FL>Review Period</FL>
-                        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                           <div>
                             <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,letterSpacing:'.04em',textTransform:'uppercase',marginBottom:5}}>Days</div>
-                            <input className="inp" type="number" name="slaDays" required min="1" value={iSla}
-                              onChange={e => setISla(Number(e.target.value))}/>
+                            <input className="inp" type="number" name="slaDays" required min="1" value={iSla} onChange={e=>setISla(Number(e.target.value))}/>
                           </div>
                           <div>
-                            <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,letterSpacing:'.04em',textTransform:'uppercase',marginBottom:5}}>Due Date</div>
-                            <input className="inp" type="date"
-                              value={(() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + iSla); return d.toISOString().split('T')[0]; })()}
+                            <div style={{fontSize:10,color:'#94a3b8',fontWeight:600,letterSpacing:'.04em',textTransform:'uppercase',marginBottom:5}}>Calculated Due Date</div>
+                            <input className="inp" type="date" value={dueDateStr(iSla)}
                               onChange={e => {
                                 if (e.target.value) {
                                   const today = new Date(); today.setHours(0,0,0,0);
-                                  const days = Math.round((new Date(e.target.value) - today) / 86400000);
+                                  const days  = Math.round((new Date(e.target.value) - today) / 86400000);
                                   if (days > 0) setISla(days);
                                 }
-                              }}
-                            />
+                              }}/>
                           </div>
                         </div>
                       </div>
+
                       <div style={{gridColumn:'1/-1',paddingTop:4,borderTop:'1px solid #f1f5f9'}}>
                         <div style={{fontSize:11,fontWeight:700,color:'#64748b',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:10,display:'flex',alignItems:'center',gap:6}}><ITag size={11}/>Metadata Tags</div>
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
@@ -901,6 +1010,8 @@ function App() {
                         </div>
                       </div>
                     </div>
+
+                    {/* File drop zone */}
                     <div style={{borderTop:'1px solid #f1f5f9',paddingTop:14}}>
                       <FL>Incoming PDF Package</FL>
                       <div
@@ -909,22 +1020,23 @@ function App() {
                         onDragOver={e=>{e.preventDefault();setIntakeDrag(true);}}
                         onDragEnter={e=>{e.preventDefault();setIntakeDrag(true);}}
                         onDragLeave={()=>setIntakeDrag(false)}
-                        onDrop={e=>{e.preventDefault();setIntakeDrag(false);const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')setIFile(f);else showToast('Please drop a PDF file.','error');}}
-                      >
+                        onDrop={e=>{e.preventDefault();setIntakeDrag(false);const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')setIFile(f);else showToast('Please drop a PDF file.','error');}}>
                         <ICloud size={22} style={{color:intakeDrag?'#3b82f6':'#cbd5e1',margin:'0 auto 8px',display:'block'}}/>
                         <div style={{fontSize:12,color:'#64748b'}}>{iFile?<span style={{color:'#2563eb',fontWeight:600}}>{iFile.name}</span>:<><span style={{color:'#2563eb',fontWeight:600}}>Choose a file</span> or drag &amp; drop</>}</div>
                         <div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>PDF up to 50MB</div>
                         <input id="intake-file" type="file" style={{display:'none'}} accept="application/pdf" onChange={e=>setIFile(e.target.files[0])}/>
                       </div>
                     </div>
+
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingTop:4,borderTop:'1px solid #f1f5f9'}}>
                       <div><FL>Initial Assignment</FL><select name="assignedTo" defaultValue={activeUser.name} className="sel">{userOptions.map(n=><option key={n} value={n}>{n}</option>)}</select></div>
                       <div><FL>Ball in Court</FL><select name="ballInCourt" defaultValue="Contractor" className="sel">{BIC_OPTS.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
                     </div>
+
                     <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:8,borderTop:'1px solid #f1f5f9'}}>
                       <button type="button" className="btn-s" onClick={()=>setCurrentView('dashboard')} disabled={uploading}>Cancel</button>
                       <button type="submit" className="btn-p" disabled={uploading}>
-                        {uploading?<><ICloud size={13}/>{iFile?`Uploading ${progress}%…`:'Saving…'}</>:<><IFPlus size={13}/>Log {termMod}</>}
+                        {uploading ? <><ICloud size={13}/>{iFile?`Uploading ${progress}%…`:'Saving…'}</> : <><IFPlus size={13}/>Log {termMod}</>}
                       </button>
                     </div>
                   </form>
@@ -933,25 +1045,37 @@ function App() {
             </div>
           )}
 
-          {/* ── DETAIL ────────────────────────────────────────────────────── */}
-          {currentView==='detail'&&activeRec&&(()=>{
-            const{de,dr,isLate}=getSla(activeRec);
-            const bic=activeRec.ballInCourt||'—';
-            return(
+          {/* ── DETAIL ──────────────────────────────────────────────────────── */}
+          {currentView==='detail' && activeRec && (() => {
+            const {de,dr,isLate} = getSla(activeRec);
+            const bic = activeRec.ballInCourt||'—';
+            return (
               <div style={{display:'grid',gridTemplateColumns:'280px 1fr',gap:18,alignItems:'start'}}>
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
+
                   {/* Properties */}
                   <div className="card" style={{overflow:'hidden'}}>
                     <div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                       <span style={{fontWeight:600,fontSize:13,color:'#0f172a'}}>Properties</span>
-                      {!isEditing&&<button onClick={()=>{setEditForm({title:activeRec.title,subtitle:activeRec.subtitle||'',contractor:activeRec.contractor,revision:activeRec.revision,slaDays:activeRec.slaDays,relatedDocs:activeRec.relatedDocs||''});setIsEditing(true);}} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',padding:4,borderRadius:4,display:'flex'}}><IEdit size={13}/></button>}
+                      {!isEditing && <button onClick={()=>{setEditForm({title:activeRec.title,subtitle:activeRec.subtitle||'',contractor:activeRec.contractor,revision:activeRec.revision,slaDays:activeRec.slaDays,relatedDocs:activeRec.relatedDocs||''});setIsEditing(true);}} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',padding:4,borderRadius:4,display:'flex'}}><IEdit size={13}/></button>}
                     </div>
-                    {!isEditing?(
+                    {!isEditing ? (
                       <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:10}}>
-                        {[{label:'Record ID',val:<span style={{fontFamily:'monospace',fontSize:11}}>{activeRec.id} · {termRev} {activeRec.revision}</span>},{label:'Logged By',val:activeRec.loggedBy||'System Legacy'},activeRec.subtitle&&{label:termSub,val:activeRec.subtitle},{label:'Project',val:activeRec.projectName},{label:'Contractor',val:activeRec.contractor}].filter(Boolean).map(({label,val})=>(
+                        {[
+                          {label:'Record ID',val:<span style={{fontFamily:'monospace',fontSize:11}}>{activeRec.id} · {termRev} {activeRec.revision}</span>},
+                          {label:'Logged By',val:activeRec.loggedBy||'System Legacy'},
+                          activeRec.subtitle && {label:termSub,val:activeRec.subtitle},
+                          {label:'Project',val:activeRec.projectName},
+                          {label:'Contractor',val:activeRec.contractor},
+                        ].filter(Boolean).map(({label,val}) => (
                           <div key={label}><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>{label}</div><div style={{fontSize:12,fontWeight:500,color:'#334155'}}>{val}</div></div>
                         ))}
-                        {activeRec.relatedDocs&&(<div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:5,padding:'8px 10px'}}><div style={{fontSize:10,fontWeight:700,color:'#2563eb',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3,display:'flex',alignItems:'center',gap:4}}><ILink size={10}/>Plan Sheets</div><div style={{fontSize:12,fontWeight:600,color:'#1e3a8a'}}>{activeRec.relatedDocs}</div></div>)}
+                        {activeRec.relatedDocs && (
+                          <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:5,padding:'8px 10px'}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'#2563eb',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:3,display:'flex',alignItems:'center',gap:4}}><ILink size={10}/>Plan Sheets</div>
+                            <div style={{fontSize:12,fontWeight:600,color:'#1e3a8a'}}>{activeRec.relatedDocs}</div>
+                          </div>
+                        )}
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                           <div><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>Received</div><div style={{fontSize:12,fontWeight:500,color:'#334155'}}>{fmtDate(activeRec.dateReceived)}</div></div>
                           <div><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>Review Period</div><div style={{fontSize:12,fontWeight:500,color:'#334155'}}>{activeRec.slaDays} days</div></div>
@@ -962,7 +1086,7 @@ function App() {
                           <span style={{fontSize:11,color:'#94a3b8'}}>{de}d elapsed</span>
                         </div>
                       </div>
-                    ):(
+                    ) : (
                       <form onSubmit={doEditSubmit} style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:10}}>
                         <div><FL>Title</FL><input className="inp" required value={editForm.title} onChange={e=>setEditForm({...editForm,title:e.target.value})}/></div>
                         <div><FL>{termSub}</FL><input className="inp" value={editForm.subtitle} onChange={e=>setEditForm({...editForm,subtitle:e.target.value})}/></div>
@@ -981,30 +1105,30 @@ function App() {
                   <div className="card" style={{padding:'12px 16px'}}>
                     <div style={{fontWeight:600,fontSize:13,color:'#0f172a',marginBottom:10,paddingBottom:8,borderBottom:'1px solid #f1f5f9'}}>Attachments</div>
                     <div style={{display:'flex',flexDirection:'column',gap:7}}>
-                      {/* Incoming */}
-                      {activeRec.incomingPdfRef?(
+                      {activeRec.incomingPdfRef ? (
                         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 10px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:5}}>
-                          <div style={{display:'flex',alignItems:'center',gap:7,overflow:'hidden'}}><IFT size={14} style={{color:'#3b82f6',flexShrink:0}}/><div style={{minWidth:0}}><div style={{fontSize:12,color:'#334155',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontWeight:500}}>{activeRec.incomingFileName||'Incoming Package'}</div><div style={{fontSize:10,color:'#94a3b8'}}>Original submission</div></div></div>
+                          <div style={{display:'flex',alignItems:'center',gap:7,overflow:'hidden'}}>
+                            <IFT size={14} style={{color:'#3b82f6',flexShrink:0}}/>
+                            <div style={{minWidth:0}}>
+                              <div style={{fontSize:12,color:'#334155',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontWeight:500}}>{activeRec.incomingFileName||'Incoming Package'}</div>
+                              <div style={{fontSize:10,color:'#94a3b8'}}>Original submission</div>
+                            </div>
+                          </div>
                           <a href={activeRec.incomingPdfRef} target="_blank" rel="noreferrer" style={{color:'#2563eb',display:'flex',flexShrink:0,marginLeft:8}}><IDl size={14}/></a>
                         </div>
-                      ):<p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No incoming file.</p>}
-
+                      ) : <p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No incoming file.</p>}
                       {/* Legacy single outgoing */}
-                      {activeRec.outgoingPdfRef&&!(activeRec.outgoingFiles?.length>0)&&(
+                      {activeRec.outgoingPdfRef && !(activeRec.outgoingFiles?.length>0) && (
                         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:5}}>
                           <div style={{display:'flex',alignItems:'center',gap:7,overflow:'hidden'}}><ICheck size={14} style={{color:'#16a34a',flexShrink:0}}/><span style={{fontSize:12,color:'#166534',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontWeight:500}}>{activeRec.outgoingFileName||'Marked Up Final'}</span></div>
                           <a href={activeRec.outgoingPdfRef} target="_blank" rel="noreferrer" style={{color:'#16a34a',display:'flex',flexShrink:0}}><IDl size={14}/></a>
                         </div>
                       )}
-
                       {/* Multi-file redlines */}
-                      {(activeRec.outgoingFiles||[]).map((f,i)=>(
+                      {(activeRec.outgoingFiles||[]).map((f,i) => (
                         <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'7px 10px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:5}}>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{display:'flex',alignItems:'center',gap:7,overflow:'hidden'}}>
-                              <ICheck size={14} style={{color:'#16a34a',flexShrink:0}}/>
-                              <span style={{fontSize:12,color:'#166534',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontWeight:500}}>{f.name}</span>
-                            </div>
+                            <div style={{display:'flex',alignItems:'center',gap:7,overflow:'hidden'}}><ICheck size={14} style={{color:'#16a34a',flexShrink:0}}/><span style={{fontSize:12,color:'#166534',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontWeight:500}}>{f.name}</span></div>
                             <div style={{fontSize:10,color:'#94a3b8',marginTop:2,paddingLeft:21}}>{f.uploadedBy} · {fmtDate(f.uploadedAt)}</div>
                           </div>
                           <a href={f.url} target="_blank" rel="noreferrer" style={{color:'#16a34a',display:'flex',flexShrink:0,marginLeft:8}}><IDl size={14}/></a>
@@ -1020,15 +1144,18 @@ function App() {
                       <span style={{marginLeft:'auto',fontSize:11,color:'#94a3b8'}}>{activeRec.comments?.length||0} notes</span>
                     </div>
                     <div style={{flex:1,overflowY:'auto',padding:'10px 14px',display:'flex',flexDirection:'column',gap:8}}>
-                      {(!activeRec.comments||activeRec.comments.length===0)?<p style={{fontSize:12,color:'#94a3b8',textAlign:'center',fontStyle:'italic',marginTop:16}}>No comments yet.</p>:activeRec.comments.map(c=>(
-                        <div key={c.id} style={{background:'#f8fafc',borderRadius:5,padding:'8px 10px',border:'1px solid #f1f5f9'}}>
-                          <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}><span style={{fontSize:11,fontWeight:700,color:'#334155'}}>{c.user}</span><span style={{fontSize:10,color:'#94a3b8'}}>{fmtDate(c.timestamp)} {fmtTime(c.timestamp)}</span></div>
-                          <p style={{fontSize:12,color:'#475569',whiteSpace:'pre-wrap',lineHeight:1.5,margin:0}}>{c.text}</p>
-                        </div>
-                      ))}
+                      {(!activeRec.comments||activeRec.comments.length===0) ? <p style={{fontSize:12,color:'#94a3b8',textAlign:'center',fontStyle:'italic',marginTop:16}}>No comments yet.</p> :
+                        activeRec.comments.map(c => (
+                          <div key={c.id} style={{background:'#f8fafc',borderRadius:5,padding:'8px 10px',border:'1px solid #f1f5f9'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}><span style={{fontSize:11,fontWeight:700,color:'#334155'}}>{c.user}</span><span style={{fontSize:10,color:'#94a3b8'}}>{fmtDate(c.timestamp)} {fmtTime(c.timestamp)}</span></div>
+                            <p style={{fontSize:12,color:'#475569',whiteSpace:'pre-wrap',lineHeight:1.5,margin:0}}>{c.text}</p>
+                          </div>
+                        ))
+                      }
                     </div>
                     <form onSubmit={addComment} style={{padding:'8px 12px',borderTop:'1px solid #f1f5f9',position:'relative'}}>
-                      <textarea className="inp" rows="2" placeholder="Add a note… (Enter to send)" value={newComment} onChange={e=>setNewComment(e.target.value)} style={{resize:'none',paddingRight:36,fontSize:12}} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addComment(e);}}}></textarea>
+                      <textarea className="inp" rows="2" placeholder="Add a note… (Enter to send)" value={newComment} onChange={e=>setNewComment(e.target.value)} style={{resize:'none',paddingRight:36,fontSize:12}}
+                        onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addComment(e);}}}></textarea>
                       <button type="submit" disabled={!newComment.trim()} style={{position:'absolute',right:16,bottom:16,background:'none',border:'none',cursor:'pointer',color:'#2563eb',opacity:newComment.trim()?1:.3,display:'flex'}}><ISend size={14}/></button>
                     </form>
                   </div>
@@ -1036,14 +1163,14 @@ function App() {
 
                 {/* Right column */}
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                  {/* Routing card */}
                   <div className="card" style={{padding:'16px 20px'}}>
                     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16,paddingBottom:14,borderBottom:'1px solid #f1f5f9'}}>
                       <div>
                         <div style={{fontSize:17,fontWeight:700,color:'#0f172a',letterSpacing:'-.01em'}}>{activeRec.title}</div>
                         <div style={{fontSize:12,color:'#64748b',marginTop:3}}>{activeRec.projectName} · {activeRec.contractor}</div>
                       </div>
-                      <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:4,border:'1px solid',flexShrink:0,marginLeft:12,...((activeRec.externalStatus||'').includes('Approved')||activeRec.externalStatus==='Answered'||activeRec.externalStatus==='Closed'?{background:'#f0fdf4',borderColor:'#bbf7d0',color:'#166534'}:(activeRec.externalStatus||'').includes('Pending')?{background:'#fffbeb',borderColor:'#fde68a',color:'#92400e'}:{background:'#fef2f2',borderColor:'#fecaca',color:'#991b1b'})}}>
+                      <span style={{fontSize:12,fontWeight:700,padding:'4px 12px',borderRadius:4,border:'1px solid',flexShrink:0,marginLeft:12,
+                        ...((activeRec.externalStatus||'').includes('Approved')||activeRec.externalStatus==='Answered'||activeRec.externalStatus==='Closed'?{background:'#f0fdf4',borderColor:'#bbf7d0',color:'#166534'}:(activeRec.externalStatus||'').includes('Pending')?{background:'#fffbeb',borderColor:'#fde68a',color:'#92400e'}:{background:'#fef2f2',borderColor:'#fecaca',color:'#991b1b'})}}>
                         {activeRec.externalStatus||'Pending'}
                       </span>
                     </div>
@@ -1066,14 +1193,13 @@ function App() {
                             onDragOver={e=>{e.preventDefault();setDetailDrag(true);}}
                             onDragEnter={e=>{e.preventDefault();setDetailDrag(true);}}
                             onDragLeave={()=>setDetailDrag(false)}
-                            onDrop={e=>{e.preventDefault();setDetailDrag(false);const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')setOutFile(f);else showToast('Please drop a PDF file.','error');}}
-                          >
+                            onDrop={e=>{e.preventDefault();setDetailDrag(false);const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')setOutFile(f);else showToast('Please drop a PDF file.','error');}}>
                             <ICloud size={18} style={{color:detailDrag?'#3b82f6':'#cbd5e1',margin:'0 auto 6px',display:'block'}}/>
                             <div style={{fontSize:12,color:'#64748b'}}>{outFile?<span style={{color:'#2563eb',fontWeight:600}}>{outFile.name}</span>:<><span style={{color:'#2563eb',fontWeight:600}}>Choose a file</span> or drag &amp; drop</>}</div>
                             <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>PDF only — multiple uploads allowed</div>
                             <input id="detail-file" type="file" style={{display:'none'}} accept="application/pdf" onChange={e=>setOutFile(e.target.files[0])}/>
                           </div>
-                          {outFile&&(
+                          {outFile && (
                             <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:8}}>
                               <button className="btn-s" style={{fontSize:11}} onClick={()=>setOutFile(null)}>Clear</button>
                               <button onClick={doOutgoing} disabled={uploading} className="btn-p" style={{fontSize:11}}>{uploading?`Uploading ${progress}%…`:'Upload Redline'}</button>
@@ -1090,15 +1216,15 @@ function App() {
                       <IHist size={13} style={{color:'#94a3b8'}}/><span style={{fontWeight:600,fontSize:13,color:'#0f172a'}}>Audit History</span>
                       <span style={{marginLeft:'auto',fontSize:11,color:'#94a3b8'}}>{(activeRec.history||[]).length} events</span>
                     </div>
-                    {(!activeRec.history||activeRec.history.length===0)?(
+                    {(!activeRec.history||activeRec.history.length===0) ? (
                       <div style={{padding:'20px 16px',fontSize:12,color:'#94a3b8',textAlign:'center',fontStyle:'italic'}}>No history recorded.</div>
-                    ):(
+                    ) : (
                       <div style={{maxHeight:280,overflowY:'auto'}}>
-                        {[...(activeRec.history||[])].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).map((h,i,arr)=>(
+                        {[...(activeRec.history||[])].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).map((h,i,arr) => (
                           <div key={i} style={{display:'flex',gap:12,padding:'10px 16px',borderBottom:i<arr.length-1?'1px solid #f8fafc':'none'}}>
                             <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0}}>
                               <div style={{width:8,height:8,borderRadius:'50%',background:'#3b82f6',marginTop:3,flexShrink:0}}></div>
-                              {i<arr.length-1&&<div style={{width:1,flex:1,background:'#f1f5f9',marginTop:3}}></div>}
+                              {i<arr.length-1 && <div style={{width:1,flex:1,background:'#f1f5f9',marginTop:3}}></div>}
                             </div>
                             <div style={{flex:1,minWidth:0,paddingBottom:2}}>
                               <div style={{fontSize:12,fontWeight:600,color:'#334155'}}>{h.action}</div>
@@ -1114,26 +1240,26 @@ function App() {
             );
           })()}
 
-          {/* ── ANALYTICS ─────────────────────────────────────────────────── */}
-          {currentView==='analytics'&&(()=>{
-            const active  = projectFiltered.filter(s=>s.internalStatus!=='Sent Out');
-            const overdue = active.filter(s=>getSla(s).isLate);
-            const avgAge  = active.length>0?Math.round(active.reduce((a,s)=>a+getSla(s).de,0)/active.length):0;
-            const pct     = active.length>0?Math.round(overdue.length/active.length*100):0;
+          {/* ── ANALYTICS ───────────────────────────────────────────────────── */}
+          {currentView==='analytics' && (() => {
+            const active   = projectFiltered.filter(s=>s.internalStatus!=='Sent Out');
+            const overdue  = active.filter(s=>getSla(s).isLate);
+            const avgAge   = active.length>0 ? Math.round(active.reduce((a,s)=>a+getSla(s).de,0)/active.length) : 0;
+            const pct      = active.length>0 ? Math.round(overdue.length/active.length*100) : 0;
             const wMap={}; active.forEach(s=>{const a=s.assignedTo||'Unassigned';wMap[a]=(wMap[a]||0)+1;});
-            const workload=Object.entries(wMap).map(([n,c])=>({name:n,count:c})).sort((a,b)=>b.count-a.count);
+            const workload = Object.entries(wMap).map(([n,c])=>({name:n,count:c})).sort((a,b)=>b.count-a.count);
             const bicMap={}; active.forEach(s=>{const b=s.ballInCourt||'—';bicMap[b]=(bicMap[b]||0)+1;});
-            const kpis=[
+            const kpis = [
               {label:'Total Active',val:active.length,sub:activeProjectName?`in ${activeProjectName}`:'across all projects'},
               {label:'Overdue',val:overdue.length,sub:'past review deadline',alert:overdue.length>0},
               {label:'Avg Age (Days)',val:avgAge,sub:'across active items'},
               {label:'Breach Rate',val:`${pct}%`,sub:'exceeding review period'},
             ];
-            return(
+            return (
               <div style={{display:'flex',flexDirection:'column',gap:18}}>
-                {activeProjectName&&<div style={{fontSize:13,color:'#64748b'}}>Showing analytics for <span style={{fontWeight:700,color:'#1d4ed8'}}>{activeProjectName}</span></div>}
+                {activeProjectName && <div style={{fontSize:13,color:'#64748b'}}>Showing analytics for <span style={{fontWeight:700,color:'#1d4ed8'}}>{activeProjectName}</span></div>}
                 <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
-                  {kpis.map(k=>(
+                  {kpis.map(k => (
                     <div key={k.label} className="card" style={{padding:'16px 18px',borderLeft:`3px solid ${k.alert?'#ef4444':'#e2e8f0'}`}}>
                       <div style={{fontSize:11,fontWeight:700,color:'#64748b',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:8}}>{k.label}</div>
                       <div style={{fontSize:30,fontWeight:800,color:k.alert?'#dc2626':'#0f172a',letterSpacing:'-.02em',lineHeight:1}}>{k.val}</div>
@@ -1145,13 +1271,27 @@ function App() {
                   <div className="card" style={{overflow:'hidden'}}>
                     <div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',fontSize:12,fontWeight:700,color:'#0f172a'}}>Engineer Workload</div>
                     <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
-                      {workload.length===0?<p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No assignments.</p>:workload.map(u=>{const max=Math.max(...workload.map(w=>w.count),1);return(<div key={u.name}><div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:5}}><span style={{fontWeight:500,color:'#334155'}}>{u.name}</span><span style={{fontWeight:700,color:'#0f172a'}}>{u.count}</span></div><div style={{background:'#f1f5f9',borderRadius:3,height:6}}><div style={{background:'#2563eb',height:6,borderRadius:3,width:`${u.count/max*100}%`,transition:'width .4s'}}></div></div></div>);})}
+                      {workload.length===0 ? <p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No assignments.</p> :
+                        workload.map(u => { const max=Math.max(...workload.map(w=>w.count),1); return (
+                          <div key={u.name}>
+                            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:5}}><span style={{fontWeight:500,color:'#334155'}}>{u.name}</span><span style={{fontWeight:700,color:'#0f172a'}}>{u.count}</span></div>
+                            <div style={{background:'#f1f5f9',borderRadius:3,height:6}}><div style={{background:'#2563eb',height:6,borderRadius:3,width:`${u.count/max*100}%`,transition:'width .4s'}}></div></div>
+                          </div>
+                        ); })
+                      }
                     </div>
                   </div>
                   <div className="card" style={{overflow:'hidden'}}>
                     <div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',fontSize:12,fontWeight:700,color:'#0f172a'}}>Ball-in-Court Distribution</div>
                     <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>
-                      {Object.entries(bicMap).length===0?<p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No data.</p>:Object.entries(bicMap).sort((a,b)=>b[1]-a[1]).map(([bic,count])=>{const max=Math.max(...Object.values(bicMap),1);return(<div key={bic}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,marginBottom:5}}><span className="badge" style={BIC_STYLE[bic]||BIC_STYLE['—']}>{bic}</span><span style={{fontWeight:700,color:'#0f172a'}}>{count}</span></div><div style={{background:'#f1f5f9',borderRadius:3,height:6}}><div style={{background:'#64748b',height:6,borderRadius:3,width:`${count/max*100}%`,transition:'width .4s'}}></div></div></div>);})}
+                      {Object.entries(bicMap).length===0 ? <p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No data.</p> :
+                        Object.entries(bicMap).sort((a,b)=>b[1]-a[1]).map(([bic,count]) => { const max=Math.max(...Object.values(bicMap),1); return (
+                          <div key={bic}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,marginBottom:5}}><span className="badge" style={BIC_STYLE[bic]||BIC_STYLE['—']}>{bic}</span><span style={{fontWeight:700,color:'#0f172a'}}>{count}</span></div>
+                            <div style={{background:'#f1f5f9',borderRadius:3,height:6}}><div style={{background:'#64748b',height:6,borderRadius:3,width:`${count/max*100}%`,transition:'width .4s'}}></div></div>
+                          </div>
+                        ); })
+                      }
                     </div>
                   </div>
                 </div>
@@ -1162,26 +1302,23 @@ function App() {
         </div>
       </div>
 
-      {/* Quick comment modal */}
-      {quickModal&&(
+      {/* Discussion modal (table row comments) */}
+      {quickModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:999,padding:20}}>
           <div className="card" style={{width:'100%',maxWidth:480,overflow:'hidden',display:'flex',flexDirection:'column',maxHeight:'80vh'}}>
-            {/* Header */}
             <div style={{padding:'12px 16px',borderBottom:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
               <div style={{display:'flex',alignItems:'center',gap:8}}><IMsg size={14} style={{color:'#3b82f6'}}/><span style={{fontWeight:700,fontSize:13,color:'#0f172a'}}>Discussion</span></div>
-              <button onClick={()=>setQuickModal(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',display:'flex'}}><IX size={15}/></button>
+              <button onClick={()=>{setQuickModal(null);setQuickText('');}} style={{background:'none',border:'none',cursor:'pointer',color:'#94a3b8',display:'flex'}}><IX size={15}/></button>
             </div>
-            {/* Record info */}
             <div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',background:'#f8fafc',flexShrink:0}}>
               <div style={{fontSize:12,fontWeight:600,color:'#334155'}}>{quickModal.title}</div>
               <div style={{fontSize:11,color:'#94a3b8',marginTop:2,fontFamily:'monospace'}}>{quickModal.id} · {termRev} {quickModal.revision}</div>
             </div>
-            {/* Scrollable comments list */}
             <div style={{flex:1,overflowY:'auto',padding:'10px 16px',display:'flex',flexDirection:'column',gap:8,minHeight:0}}>
               {(!quickModal.comments||quickModal.comments.length===0) ? (
                 <div style={{textAlign:'center',padding:'24px 0',color:'#94a3b8',fontSize:12,fontStyle:'italic'}}>No comments yet — be the first to add a note.</div>
               ) : (
-                [...quickModal.comments].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)).map(c=>(
+                [...quickModal.comments].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)).map(c => (
                   <div key={c.id} style={{background:'#f8fafc',borderRadius:5,padding:'8px 10px',border:'1px solid #f1f5f9'}}>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
                       <span style={{fontSize:11,fontWeight:700,color:'#334155'}}>{c.user}</span>
@@ -1192,7 +1329,6 @@ function App() {
                 ))
               )}
             </div>
-            {/* Add comment form */}
             <div style={{padding:'10px 16px',borderTop:'1px solid #f1f5f9',flexShrink:0}}>
               <form onSubmit={addQuickComment} style={{display:'flex',flexDirection:'column',gap:8}}>
                 <textarea autoFocus className="inp" rows="3" placeholder="Add a note…" value={quickText} onChange={e=>setQuickText(e.target.value)} style={{resize:'none',fontSize:13}}
