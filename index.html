@@ -719,9 +719,9 @@ function App() {
                     {iType==='new'&&(
                       <div>
                         <FL>Copy from Existing {termMod} <span style={{fontWeight:400,textTransform:'none',letterSpacing:0,color:'#94a3b8'}}>(optional template)</span></FL>
-                        <select className="sel" value={iTemplate} onChange={e=>{setITemplate(e.target.value);if(!e.target.value)clearTemplate();}}>
-                          <option value="">— Start from scratch —</option>
-                          {records.map(s=><option key={s.id} value={s.id}>{s.projectName} · {s.id} – {s.title}</option>)}
+                        <select className="sel" value={iTemplate} onChange={e=>{setITemplate(e.target.value);if(!e.target.value)clearTemplate();}} disabled={!iProj}>
+                          <option value="">{iProj?'— Start from scratch —':'Select a project first…'}</option>
+                          {records.filter(s=>s.projectId===iProj).map(s=><option key={s.id} value={s.id}>{s.id} – {s.title}</option>)}
                         </select>
                         {iTemplate&&<div style={{display:'flex',alignItems:'center',gap:6,marginTop:6,padding:'5px 10px',background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:5}}><ICheck size={12} style={{color:'#2563eb',flexShrink:0}}/><span style={{fontSize:11,color:'#1d4ed8'}}>Fields pre-filled from template — edit anything below.</span><button type="button" onClick={()=>{setITemplate('');clearTemplate();}} style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:11,whiteSpace:'nowrap'}}>Clear</button></div>}
                       </div>
