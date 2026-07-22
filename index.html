@@ -410,6 +410,24 @@ function App() {
     finally { setUploading(false); setProgress(0); }
   };
 
+  const deleteIncomingFile = async () => {
+    if (!activeRec||!user) return;
+    try {
+      if (activeRec.incomingPdfRef) { try { await storage.refFromURL(activeRec.incomingPdfRef).delete(); } catch(e) { console.warn('Storage delete:', e); } }
+      await db.collection(activeModule).doc(activeRec.id).update({ incomingPdfRef:null, incomingFileName:null, incomingFileNote:'', history:AU({timestamp:new Date().toISOString(),action:'Deleted incoming file',user:activeUser.name}) });
+      showToast('Attachment removed.');
+    } catch { showToast('Error removing attachment.','error'); }
+  };
+
+  const deleteOutgoingFile = async (entry) => {
+    if (!activeRec||!user) return;
+    try {
+      if (entry.url) { try { await storage.refFromURL(entry.url).delete(); } catch(e) { console.warn('Storage delete:', e); } }
+      await db.collection(activeModule).doc(activeRec.id).update({ outgoingFiles:firebase.firestore.FieldValue.arrayRemove(entry), history:AU({timestamp:new Date().toISOString(),action:`Deleted redline: ${entry.name}`,user:activeUser.name}) });
+      showToast('Redline removed.');
+    } catch { showToast('Error removing redline.','error'); }
+  };
+
   const doOutgoing = async () => {
     if (!outFile||!activeRec||!user) return; setUploading(true); setProgress(0);
     try {
@@ -805,11 +823,18 @@ function App() {
                           <div><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>Received</div><div style={{fontSize:12,fontWeight:500,color:'#334155'}}>{fmtDate(activeRec.dateReceived)}</div></div>
                           <div><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>Review Period</div><div style={{fontSize:12,fontWeight:500,color:'#334155'}}>{activeRec.slaDays} days</div></div>
                         </div>
-                        <div><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>Due Date</div><div style={{fontSize:12,fontWeight:600,color:isLate?'#dc2626':'#334155'}}>{fmtDate(activeRec.dueDate)}</div></div>
-                        <div style={{background:isLate?'#fef2f2':dr<=3?'#fffbeb':'#f0fdf4',border:`1px solid ${isLate?'#fecaca':dr<=3?'#fde68a':'#bbf7d0'}`,borderRadius:5,padding:'7px 10px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                          <span style={{fontSize:12,fontWeight:700,color:isLate?'#dc2626':dr<=3?'#d97706':'#16a34a'}}>{isLate?`${Math.abs(dr)}d overdue`:dr<=3?`${dr}d at risk`:`${dr}d remaining`}</span>
-                          <span style={{fontSize:11,color:'#94a3b8'}}>{de}d elapsed</span>
-                        </div>
+                        <div><div style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>Due Date</div><div style={{fontSize:12,fontWeight:600,color:activeRec.internalStatus==='Sent Out'?'#334155':isLate?'#dc2626':'#334155'}}>{fmtDate(activeRec.dueDate)}</div></div>
+                        {activeRec.internalStatus==='Sent Out'?(
+                          <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:5,padding:'7px 10px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                            <span style={{fontSize:12,fontWeight:700,color:'#16a34a',display:'flex',alignItems:'center',gap:4}}><ICheck size={13}/>Sent Out</span>
+                            <span style={{fontSize:11,color:'#94a3b8'}}>{de}d elapsed</span>
+                          </div>
+                        ):(
+                          <div style={{background:isLate?'#fef2f2':dr<=3?'#fffbeb':'#f0fdf4',border:`1px solid ${isLate?'#fecaca':dr<=3?'#fde68a':'#bbf7d0'}`,borderRadius:5,padding:'7px 10px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                            <span style={{fontSize:12,fontWeight:700,color:isLate?'#dc2626':dr<=3?'#d97706':'#16a34a'}}>{isLate?`${Math.abs(dr)}d overdue`:dr<=3?`${dr}d at risk`:`${dr}d remaining`}</span>
+                            <span style={{fontSize:11,color:'#94a3b8'}}>{de}d elapsed</span>
+                          </div>
+                        )}
                       </div>
                     ):(
                       <form onSubmit={doEditSubmit} style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:10}}>
