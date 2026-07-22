@@ -96,7 +96,6 @@ const EXT_STATUSES = {
   submittals: ['Pending','Approved','Approved as Noted','Revise & Resubmit','Rejected','Information Only'],
   rfis: ['Pending','Answered','Clarification Requested','Closed']
 };
-const BIC_OPTS = ['—','Contractor','EOR','PM','QC','Owner'];
 const INT_STYLE = {
   'Sent Out':              { background:'#f0fdf4', color:'#166534', borderColor:'#bbf7d0' },
   'In Review':             { background:'#eff6ff', color:'#1e40af', borderColor:'#bfdbfe' },
@@ -104,15 +103,6 @@ const INT_STYLE = {
   'Assigned':              { background:'#eff6ff', color:'#1d4ed8', borderColor:'#bfdbfe' },
   'Unassigned':            { background:'#f8fafc', color:'#475569', borderColor:'#e2e8f0' },
 };
-const BIC_STYLE = {
-  'Contractor': { background:'#fff7ed', color:'#9a3412', borderColor:'#fed7aa' },
-  'EOR':        { background:'#eff6ff', color:'#1e40af', borderColor:'#bfdbfe' },
-  'PM':         { background:'#f5f3ff', color:'#5b21b6', borderColor:'#ddd6fe' },
-  'QC':         { background:'#eef2ff', color:'#3730a3', borderColor:'#c7d2fe' },
-  'Owner':      { background:'#f0fdf4', color:'#166534', borderColor:'#bbf7d0' },
-  '—':          { background:'#f8fafc', color:'#64748b', borderColor:'#e2e8f0' },
-};
-
 const fmtDate = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 const fmtTime = d => new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 const getSla  = s => {
@@ -389,14 +379,13 @@ function App() {
       if (iFile) { const ext=iFile.name.split('.').pop(); fileUrl=await uploadFile(iFile,`projects/${iProj}/${activeModule}/${rid}/Incoming_Rev${iRev}.${ext}`); }
       const tags={components:iComp.split(',').map(s=>s.trim()).filter(Boolean),disciplines:iDisc.split(',').map(s=>s.trim()).filter(Boolean)};
       const rawA=e.target.elements.assignedTo.value.trim();
-      const rawB=e.target.elements.ballInCourt.value||'—';
       await db.collection(activeModule).doc(rid).set({
         projectId:iProj, projectName:projects.find(p=>p.id===iProj)?.name||'Unknown',
         title:iTitle, subtitle:iSub||'', contractor:iContr,
         revision:Number(iRev), baseSubmittalId:iBase||null,
         dateReceived:new Date().toISOString(), slaDays:sla,
         dueDate:new Date(Date.now()+sla*86400000).toISOString(),
-        assignedTo:rawA||'Unassigned', ballInCourt:rawB,
+        assignedTo:rawA||'Unassigned',
         internalStatus:(!rawA||rawA==='Unassigned')?'Unassigned':'Assigned',
         externalStatus:'Pending',
         incomingPdfRef:fileUrl, incomingFileName:iFile?iFile.name:null,
@@ -483,9 +472,9 @@ function App() {
 
   const exportCSV = ()=>{
     const lbl=isRfi?'RFI':'Submittal';
-    const h=[`${lbl} ID`,termRev,'Title',termSub,'Project','Contractor','Ball in Court','Logged By','Internal Status','External Status','Assigned To','QC Reviewer','Date Received','Review Period (Days)','Due Date','Components','Disciplines','Related Docs'];
+    const h=[`${lbl} ID`,termRev,'Title',termSub,'Project','Contractor','Logged By','Internal Status','External Status','Assigned To','QC Reviewer','Date Received','Review Period (Days)','Due Date','Components','Disciplines','Related Docs'];
     const q=s=>`"${(s||'').replace(/"/g,'""')}"`;
-    const rows=treeRecs.filter(r=>!r.isVirtual).map(s=>[s.id,s.revision,q(s.title),q(s.subtitle),q(s.projectName),q(s.contractor),s.ballInCourt||'—',q(s.loggedBy),s.internalStatus,s.externalStatus,q(s.assignedTo||'Unassigned'),q(s.qcReviewer),new Date(s.dateReceived).toLocaleDateString(),s.slaDays,new Date(s.dueDate).toLocaleDateString(),q((s.tags?.components||[]).join(', ')),q((s.tags?.disciplines||[]).join(', ')),q(s.relatedDocs)]);
+    const rows=treeRecs.filter(r=>!r.isVirtual).map(s=>[s.id,s.revision,q(s.title),q(s.subtitle),q(s.projectName),q(s.contractor),q(s.loggedBy),s.internalStatus,s.externalStatus,q(s.assignedTo||'Unassigned'),q(s.qcReviewer),new Date(s.dateReceived).toLocaleDateString(),s.slaDays,new Date(s.dueDate).toLocaleDateString(),q((s.tags?.components||[]).join(', ')),q((s.tags?.disciplines||[]).join(', ')),q(s.relatedDocs)]);
     const csv='data:text/csv;charset=utf-8,'+[h.join(','),...rows.map(r=>r.join(','))].join('\n');
     const a=document.createElement('a');a.href=encodeURI(csv);a.download=`${lbl}_Log_${new Date().toISOString().split('T')[0]}.csv`;document.body.appendChild(a);a.click();document.body.removeChild(a);showToast('Export complete.');
   };
@@ -653,7 +642,7 @@ function App() {
                         <SortTh label={termMod} field="title" style={{minWidth:240}}/>
                         {!activeProjectId&&<th className="th" style={{minWidth:110}}>Project</th>}
                         <SortTh label="Timeline" field="dueDate" style={{minWidth:130}}/>
-                        <th className="th" style={{minWidth:140}}>Routing / BIC</th>
+                        <th className="th" style={{minWidth:140}}>Routing</th>
                         <SortTh label="Aging" field="dateReceived" style={{minWidth:85}}/>
                         <th className="th" style={{minWidth:190}}>Comments</th>
                         <th className="th" style={{width:55}}></th>
@@ -670,7 +659,7 @@ function App() {
                             </tr>
                           );
                           const{de,dr,isLate}=getSla(sub);
-                          const bic=sub.ballInCourt||'—', intSt=sub.internalStatus||'Unassigned';
+                          const intSt=sub.internalStatus||'Unassigned';
                           const latestComment=sub.comments?.length?[...sub.comments].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp))[0]:null;
                           return(
                             <tr key={sub.id} className="tr-data">
@@ -691,7 +680,7 @@ function App() {
                               </td>
                               {!activeProjectId&&<td className="td"><div style={{fontSize:12,fontWeight:500,color:'#1e293b'}}>{sub.projectName}</div><div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>{sub.contractor}</div></td>}
                               <td className="td"><div style={{fontSize:11,color:'#475569',lineHeight:1.9}}><div><span style={{color:'#94a3b8',display:'inline-block',width:52}}>Received</span><span style={{fontWeight:500}}>{fmtDate(sub.dateReceived)}</span></div><div><span style={{color:'#94a3b8',display:'inline-block',width:52}}>Period</span><span style={{fontWeight:500}}>{sub.slaDays}d</span></div><div><span style={{color:'#94a3b8',display:'inline-block',width:52}}>Due</span><span style={{fontWeight:600,color:isLate?'#dc2626':'#1e293b'}}>{fmtDate(sub.dueDate)}</span></div></div></td>
-                              <td className="td"><div style={{display:'flex',flexDirection:'column',gap:5}}><span className="badge" style={INT_STYLE[intSt]||INT_STYLE['Unassigned']}>{intSt}</span><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:18,height:18,borderRadius:'50%',background:'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#475569',flexShrink:0}}>{(sub.assignedTo||'U').charAt(0).toUpperCase()}</div><span style={{fontSize:11,color:'#475569',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:110}}>{sub.assignedTo||'Unassigned'}</span></div><span className="badge" style={BIC_STYLE[bic]||BIC_STYLE['—']}>{bic}</span></div></td>
+                              <td className="td"><div style={{display:'flex',flexDirection:'column',gap:5}}><span className="badge" style={INT_STYLE[intSt]||INT_STYLE['Unassigned']}>{intSt}</span><div style={{display:'flex',alignItems:'center',gap:5}}><div style={{width:18,height:18,borderRadius:'50%',background:'#e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#475569',flexShrink:0}}>{(sub.assignedTo||'U').charAt(0).toUpperCase()}</div><span style={{fontSize:11,color:'#475569',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:110}}>{sub.assignedTo||'Unassigned'}</span></div></div></td>
                               <td className="td">{sub.internalStatus==='Sent Out'?(<div><div style={{display:'flex',alignItems:'center',gap:4,fontSize:12,fontWeight:600,color:'#16a34a'}}><ICheck size={13}/>Sent Out</div><div style={{fontSize:11,color:'#94a3b8',marginTop:3}}>{de}d elapsed</div></div>):(<div><div style={{fontSize:12,fontWeight:600,color:isLate?'#dc2626':'#475569',display:'flex',alignItems:'center',gap:4}}><IClock size={13}/>{de}d</div><div style={{fontSize:11,fontWeight:700,marginTop:3,color:isLate?'#dc2626':dr<=3?'#d97706':'#16a34a'}}>{isLate?`${Math.abs(dr)}d over`:`${dr}d left`}</div></div>)}</td>
                               <td className="td" style={{cursor:'pointer'}} onClick={()=>setQuickModal(sub)}>
                                 {!latestComment?<span style={{fontSize:11,color:'#cbd5e1',fontStyle:'italic'}}>No comments</span>:(
@@ -785,9 +774,8 @@ function App() {
                       )}
                     </div>
 
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,paddingTop:4,borderTop:'1px solid #f1f5f9'}}>
+                    <div style={{paddingTop:4,borderTop:'1px solid #f1f5f9'}}>
                       <div><FL>Initial Assignment</FL><select name="assignedTo" defaultValue={activeUser.name} className="sel">{userOptions.map(n=><option key={n} value={n}>{n}</option>)}</select></div>
-                      <div><FL>Ball in Court</FL><select name="ballInCourt" defaultValue="Contractor" className="sel">{BIC_OPTS.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
                     </div>
                     <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:8,borderTop:'1px solid #f1f5f9'}}>
                       <button type="button" className="btn-s" onClick={()=>setCurrentView('dashboard')} disabled={uploading}>Cancel</button>
@@ -802,7 +790,6 @@ function App() {
           {/* ── DETAIL ───────────────────────────────────────────────────── */}
           {currentView==='detail'&&activeRec&&(()=>{
             const{de,dr,isLate}=getSla(activeRec);
-            const bic=activeRec.ballInCourt||'—';
             return(
               <div style={{display:'grid',gridTemplateColumns:'280px 1fr',gap:18,alignItems:'start'}}>
                 <div style={{display:'flex',flexDirection:'column',gap:14}}>
@@ -911,7 +898,6 @@ function App() {
                         <div><FL>Assigned Engineer</FL><select className="sel" value={assignedIn} onChange={e=>{setAssignedIn(e.target.value);updateStatus(activeRec.id,{assignedTo:e.target.value||'Unassigned'});}}>{userOptions.map(n=><option key={n} value={n}>{n}</option>)}</select></div>
                         <div><FL>QC Reviewer</FL><select className="sel" value={qcIn} onChange={e=>{setQcIn(e.target.value);updateStatus(activeRec.id,{qcReviewer:e.target.value});}}><option value="">— None —</option>{userOptions.filter(n=>n!=='Unassigned').map(n=><option key={n} value={n}>{n}</option>)}</select></div>
                         <div><FL>Internal Status</FL><select className="sel" value={activeRec.internalStatus||'Unassigned'} onChange={e=>updateStatus(activeRec.id,{internalStatus:e.target.value})}>{INT_STATUSES.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
-                        <div><FL>Ball in Court</FL><select className="sel" style={{fontWeight:600,...BIC_STYLE[bic]}} value={bic} onChange={e=>updateStatus(activeRec.id,{ballInCourt:e.target.value})}>{BIC_OPTS.map(o=><option key={o} value={o}>{o}</option>)}</select></div>
                       </div>
                       <div style={{display:'flex',flexDirection:'column',gap:12}}>
                         <div style={{fontSize:11,fontWeight:700,color:'#64748b',letterSpacing:'.05em',textTransform:'uppercase',display:'flex',alignItems:'center',gap:6}}><ICheck size={11}/>Engineering Decision</div>
@@ -970,7 +956,6 @@ function App() {
             const pct=active.length>0?Math.round(overdue.length/active.length*100):0;
             const wMap={};active.forEach(s=>{const a=s.assignedTo||'Unassigned';wMap[a]=(wMap[a]||0)+1;});
             const workload=Object.entries(wMap).map(([n,c])=>({name:n,count:c})).sort((a,b)=>b.count-a.count);
-            const bicMap={};active.forEach(s=>{const b=s.ballInCourt||'—';bicMap[b]=(bicMap[b]||0)+1;});
             const kpis=[{label:'Total Active',val:active.length,sub:activeProjectName?`in ${activeProjectName}`:'across all projects'},{label:'Overdue',val:overdue.length,sub:'past review deadline',alert:overdue.length>0},{label:'Avg Age (Days)',val:avgAge,sub:'across active items'},{label:'Breach Rate',val:`${pct}%`,sub:'exceeding review period'}];
             return(
               <div style={{display:'flex',flexDirection:'column',gap:18}}>
@@ -978,10 +963,7 @@ function App() {
                 <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
                   {kpis.map(k=><div key={k.label} className="card" style={{padding:'16px 18px',borderLeft:`3px solid ${k.alert?'#ef4444':'#e2e8f0'}`}}><div style={{fontSize:11,fontWeight:700,color:'#64748b',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:8}}>{k.label}</div><div style={{fontSize:30,fontWeight:800,color:k.alert?'#dc2626':'#0f172a',letterSpacing:'-.02em',lineHeight:1}}>{k.val}</div><div style={{fontSize:11,color:'#94a3b8',marginTop:6}}>{k.sub}</div></div>)}
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-                  <div className="card" style={{overflow:'hidden'}}><div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',fontSize:12,fontWeight:700,color:'#0f172a'}}>Engineer Workload</div><div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>{workload.length===0?<p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No assignments.</p>:workload.map(u=>{const max=Math.max(...workload.map(w=>w.count),1);return(<div key={u.name}><div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:5}}><span style={{fontWeight:500,color:'#334155'}}>{u.name}</span><span style={{fontWeight:700,color:'#0f172a'}}>{u.count}</span></div><div style={{background:'#f1f5f9',borderRadius:3,height:6}}><div style={{background:'#2563eb',height:6,borderRadius:3,width:`${u.count/max*100}%`,transition:'width .4s'}}></div></div></div>);})}</div></div>
-                  <div className="card" style={{overflow:'hidden'}}><div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',fontSize:12,fontWeight:700,color:'#0f172a'}}>Ball-in-Court Distribution</div><div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>{Object.entries(bicMap).length===0?<p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No data.</p>:Object.entries(bicMap).sort((a,b)=>b[1]-a[1]).map(([bic,count])=>{const max=Math.max(...Object.values(bicMap),1);return(<div key={bic}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12,marginBottom:5}}><span className="badge" style={BIC_STYLE[bic]||BIC_STYLE['—']}>{bic}</span><span style={{fontWeight:700,color:'#0f172a'}}>{count}</span></div><div style={{background:'#f1f5f9',borderRadius:3,height:6}}><div style={{background:'#64748b',height:6,borderRadius:3,width:`${count/max*100}%`,transition:'width .4s'}}></div></div></div>);})}</div></div>
-                </div>
+                <div className="card" style={{overflow:'hidden'}}><div style={{padding:'10px 16px',borderBottom:'1px solid #f1f5f9',fontSize:12,fontWeight:700,color:'#0f172a'}}>Engineer Workload</div><div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:12}}>{workload.length===0?<p style={{fontSize:12,color:'#94a3b8',fontStyle:'italic',margin:0}}>No assignments.</p>:workload.map(u=>{const max=Math.max(...workload.map(w=>w.count),1);return(<div key={u.name}><div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:5}}><span style={{fontWeight:500,color:'#334155'}}>{u.name}</span><span style={{fontWeight:700,color:'#0f172a'}}>{u.count}</span></div><div style={{background:'#f1f5f9',borderRadius:3,height:6}}><div style={{background:'#2563eb',height:6,borderRadius:3,width:`${u.count/max*100}%`,transition:'width .4s'}}></div></div></div>);})}</div></div>
               </div>
             );
           })()}
